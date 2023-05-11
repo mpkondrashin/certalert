@@ -41,7 +41,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	port := 2022
+	port := 22
 	//log.Printf("User: %s, password: %s, port: %d", user, password, port)
 	log.Printf("Run local sFTP server")
 	go secureftp.Run(user, password, privateKey, localIP.String(), port)
@@ -55,7 +55,7 @@ func main() {
 			log.Fatal(err)
 		}
 	}()
-	location := fmt.Sprintf("%s:%d:/%s", localIP, port, backupName)
+	location := fmt.Sprintf("%s:/%s", localIP, backupName)
 	password = url.QueryEscape(password)
 	options := sms.NewBackupDatabaseOptionsSFTP(location, user, password)
 	options.SetSSLPrivateKeys(true).SetTimestamp(false)
