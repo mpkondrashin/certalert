@@ -173,7 +173,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	port := 2022
+	port := 22
 	log.Printf("Run local sFTP server")
 	username := RandStringBytesRmndr(viper.GetInt(flagUsernameLength))
 	password := RandStringBytesRmndr(viper.GetInt(flagPasswordLength))
