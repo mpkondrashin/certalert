@@ -55,7 +55,7 @@ func main() {
 			log.Fatal(err)
 		}
 	}()
-	location := fmt.Sprintf("%s:/%s", localIP, backupName)
+	location := fmt.Sprintf("%s:%d:/%s", localIP, port, backupName)
 	password = url.QueryEscape(password)
 	options := sms.NewBackupDatabaseOptionsSFTP(location, user, password)
 	options.SetSSLPrivateKeys(true).SetTimestamp(false)

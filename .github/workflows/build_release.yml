@@ -15,24 +15,24 @@ jobs:
         run: GOOS=windows GOARCH=amd64 go build ./cmd/certalert
       - name: Pack release
         run: tar cfvz certalert_windows.tgz certalert.exe
-      - name: Build macOS
-        run: GOOS=darwin GOARCH=amd64 go build ./cmd/certalert
-      - name: Pack release
-        run: tar cfvz certalert_macos_amd64.tgz certalert
-      - name: Build macOS Mx
-        run: GOOS=darwin GOARCH=arm64 go build ./cmd/certalert
-      - name: Pack release
-        run: tar cfvz certalert_macos_arm64.tgz certalert
-      - name: Build Linux
-        run: GOOS=linux GOARCH=amd64 go build ./cmd/certalert
-      - name: Pack release
-        run: tar cfvz certalert_linux.tgz certalert
+#      - name: Build macOS
+#        run: GOOS=darwin GOARCH=amd64 go build ./cmd/certalert
+#      - name: Pack release
+#        run: tar cfvz certalert_macos_amd64.tgz certalert
+#      - name: Build macOS Mx
+#        run: GOOS=darwin GOARCH=arm64 go build ./cmd/certalert
+#      - name: Pack release
+#        run: tar cfvz certalert_macos_arm64.tgz certalert
+#      - name: Build Linux
+#        run: GOOS=linux GOARCH=amd64 go build ./cmd/certalert
+#      - name: Pack release
+#        run: tar cfvz certalert_linux.tgz certalert
       - name: Release
         uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/tags/')
         with:
           files: |
             certalert_windows.tgz
-            certalert_macos_amd64.tgz
-            certalert_macos_arm64.tgz
-            certalert_linux.tgz
+#            certalert_macos_amd64.tgz
+#            certalert_macos_arm64.tgz
+#            certalert_linux.tgz
