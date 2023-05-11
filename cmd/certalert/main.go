@@ -183,6 +183,7 @@ func main() {
 	defer func(backupName string) {
 		_ = os.Remove(backupName)
 	}(backupName)
+	time.Sleep(5 * time.Second)
 	RunBackup(smsClient, username, password, localIP, backupName)
 	ProcessBackup(backupName)
 }
