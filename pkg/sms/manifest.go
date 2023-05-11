@@ -34,27 +34,16 @@ func (m *ManifestFile) AddFile(fileName string, content []byte) {
 func (m *ManifestFile) Contents() []byte {
 	var b bytes.Buffer
 	for fileName, hash := range m.hashes {
-		//	fmt.Println("contents ", fileName, hash)
 		b.WriteString(fmt.Sprintf("%x", hash))
 		b.WriteString("  ")
 		b.WriteString(fileName)
 		b.WriteString("\n")
 	}
 	return b.Bytes()
-	/*
-		No need for sms-security-manifest itself
-		manifestHash := md5.Sum(b.Bytes())
-		b.WriteString(fmt.Sprintf("%x", manifestHash))
-		b.WriteString("  ")
-		b.WriteString(ManifestFileName)
-		b.WriteString("\n")
-		return b.Bytes()
-	*/
 }
 
 func (m *ManifestFile) WriteTar(tarWriter *tar.Writer) error {
 	contents := m.Contents()
-	//	fmt.Println("WiteTar:", string(contents))
 	h := tar.Header{
 		Name:    ManifestFileName,
 		Size:    int64(len(contents)),

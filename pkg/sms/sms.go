@@ -23,13 +23,13 @@ const defaultUserAgent = "smsClient/" + version
 // SMS - Tipping Point SMS client struct
 type SMS struct {
 	url                string
-	auth               Autherization
+	auth               Authorization
 	userAgent          string
 	insecureSkipVerify bool
 }
 
 // New - create new SMS client struct
-func New(url string, auth Autherization) *SMS {
+func New(url string, auth Authorization) *SMS {
 	return &SMS{
 		url:       url,
 		auth:      auth,

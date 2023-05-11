@@ -181,9 +181,7 @@ func main() {
 	smsClient := GetSMS()
 	backupName := GetBackupFileName()
 	defer func(backupName string) {
-		if err := os.Remove(backupName); err != nil {
-			log.Fatal(err)
-		}
+		_ = os.Remove(backupName)
 	}(backupName)
 	RunBackup(smsClient, username, password, localIP, backupName)
 	ProcessBackup(backupName)
