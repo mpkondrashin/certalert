@@ -26,7 +26,8 @@ const (
 )
 
 func main() {
-	smsAddress := "10.34.32.6"
+	//	smsAddress := "10.34.32.6"
+	smsAddress := "192.168.3.202"
 	log.Printf("Dial SMS (%s)", smsAddress)
 	localIP, err := GetOutboundIP(smsAddress + ":443")
 	if err != nil {
