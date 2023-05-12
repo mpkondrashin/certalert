@@ -52,6 +52,7 @@ func Run(user, password string, privateKey []byte, ip string, port int, ready ch
 					continue
 				}
 				log.Fatalf("sFTP: Failed to listen for connection: %v", err)
+				log.Fatalf("sFTP: Failed to listen for connection: %T", err)
 			}
 			break
 		}
