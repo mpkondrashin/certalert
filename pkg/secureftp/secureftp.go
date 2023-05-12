@@ -66,13 +66,16 @@ func Run(user, password string, privateKey []byte, ip string, port int) {
 			// with a payload string of "<length=4>sftp"
 			log.Printf("sFTP: Incoming channel: %s\n", newChannel.ChannelType())
 			if newChannel.ChannelType() != "session" {
-				newChannel.Reject(ssh.UnknownChannelType, "unknown channel type")
-				log.Printf("sFTP: Unknown channel type: %s\n", newChannel.ChannelType())
+				err := newChannel.Reject(ssh.UnknownChannelType, "unknown channel type")
+				if err != nil {
+					log.Printf("sFTP: Reject channel: %v", err)
+				}
+				log.Printf("sFTP: Unknown channel type: %s", newChannel.ChannelType())
 				continue
 			}
 			channel, requests, err := newChannel.Accept()
 			if err != nil {
-				log.Fatal("sFTP: Could not accept channel.", err)
+				log.Fatalf("sFTP: Could not accept channel: %v", err)
 			}
 			log.Printf("sFTP: Channel accepted\n")
 
@@ -91,7 +94,9 @@ func Run(user, password string, privateKey []byte, ip string, port int) {
 						}
 					}
 					log.Printf("sFTP: Accepted: %v", ok)
-					req.Reply(ok, nil)
+					if err := req.Reply(ok, nil); err != nil {
+						log.Printf("sFTP: Reply: %v", err)
+					}
 				}
 			}(requests)
 

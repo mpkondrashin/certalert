@@ -118,11 +118,11 @@ func RunBackup(smsClient *sms.SMS, username, password, localIP, backupName strin
 	log.Print("Initiate backup")
 	err := smsClient.BackupDatabase(options)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Backup database: %v", err)
 	}
 	info, err := os.Stat(backupName)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Stat %s: %v", backupName, err)
 	}
 	log.Printf("Got backup file: %d byes", info.Size())
 }
