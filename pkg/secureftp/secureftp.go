@@ -11,7 +11,7 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
-func Run(user, password string, privateKey []byte, ip string, port int, ready chan struct{}) {
+func Run(user, password string, privateKey []byte, ip string, port int, ready chan struct{}, tempDir string) {
 	log.Printf("sFTP: Run on %s:%d", ip, port)
 	// An SSH server is represented by a ServerConfig, which holds
 	// certificate details and handles authentication of ServerConns.
@@ -113,6 +113,7 @@ func Run(user, password string, privateKey []byte, ip string, port int, ready ch
 			}(requests)
 			serverOptions := []sftp.ServerOption{
 				sftp.WithDebug(os.Stdout),
+				sftp.WithServerWorkingDirectory(tempDir),
 			}
 			server, err := sftp.NewServer(
 				channel,

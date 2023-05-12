@@ -3,8 +3,10 @@ module github.com/mpkondrashin/certalert
 go 1.18
 
 require (
-	github.com/pkg/sftp v1.13.5
-	golang.org/x/crypto v0.8.0
+	github.com/pkg/sftp v1.13.6-0.20230401224434-34d66dd28e76
+	github.com/spf13/pflag v1.0.5
+	github.com/spf13/viper v1.15.0
+	golang.org/x/crypto v0.9.0
 )
 
 require (
@@ -17,10 +19,8 @@ require (
 	github.com/spf13/afero v1.9.3 // indirect
 	github.com/spf13/cast v1.5.0 // indirect
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
-	github.com/spf13/pflag v1.0.5 // indirect
-	github.com/spf13/viper v1.15.0 // indirect
 	github.com/subosito/gotenv v1.4.2 // indirect
-	golang.org/x/sys v0.7.0 // indirect
+	golang.org/x/sys v0.8.0 // indirect
 	golang.org/x/text v0.9.0 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect

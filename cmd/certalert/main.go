@@ -6,6 +6,7 @@ package main
 import (
 	"crypto/x509"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"math/rand"
 	"net"
@@ -43,6 +44,7 @@ const (
 	flagSMSIgnoreTLSErrors = "sms.ignore_tls_errors"
 	flagUsernameLength     = "u_length"
 	flagPasswordLength     = "p_length"
+	flagTempDir            = "temp"
 )
 
 func Configure() {
@@ -179,16 +181,21 @@ func main() {
 	log.Printf("Run local sFTP server")
 	username := RandStringBytesRmndr(viper.GetInt(flagUsernameLength))
 	password := RandStringBytesRmndr(viper.GetInt(flagPasswordLength))
+	tempDir, err := ioutil.TempDir(viper.GetString(flagTempDir), "ca-*")
+	if err != nil {
+		log.Fatalf("TempDir: %v", err)
+	}
+	log.Printf("Temp folder: %s", tempDir)
 	ready := make(chan struct{})
-	go secureftp.Run(username, password, privateKey, localIP, port, ready)
+	go secureftp.Run(username, password, privateKey, localIP, port, ready, tempDir)
 	smsClient := GetSMS()
 	backupName := GetBackupFileName()
 	defer func(backupName string) {
-		log.Printf("Remove %s", backupName)
-		_ = os.Remove(backupName)
+		log.Print("Remove temporary folder")
+		_ = os.RemoveAll(tempDir)
 	}(backupName)
 	<-ready
 	log.Print("sFTP is ready")
 	RunBackup(smsClient, username, password, localIP, backupName)
-	ProcessBackup(backupName)
+	ProcessBackup(filepath.Join(tempDir, backupName))
 }
