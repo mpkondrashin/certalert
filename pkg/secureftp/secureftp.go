@@ -4,13 +4,60 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"net"
 	"os"
 
+	"github.com/gliderlabs/ssh"
 	"github.com/pkg/sftp"
-	"golang.org/x/crypto/ssh"
 )
 
+var (
+	logger = log.New(os.Stdout, "SFTP: ", 0)
+)
+
+func getPasswordHandler(password string) func(ssh.Context, string) bool {
+	return (func(ctx ssh.Context, user_password string) bool {
+		return user_password == password
+	})
+}
+
+func Run(user, password string, ip string, port int, ready chan struct{}, tempDir string) {
+	server := ssh.Server{
+		Addr:            fmt.Sprintf("%s:%d", ip, port), // IP and PORT to connect on
+		PasswordHandler: ssh.PasswordHandler(getPasswordHandler(password)),
+		SubsystemHandlers: map[string]ssh.SubsystemHandler{
+			"sftp": func(sess ssh.Session) {
+				logger.Printf("SFTP attempt")
+				debugStream := os.Stdout
+				serverOptions := []sftp.ServerOption{
+					sftp.WithDebug(debugStream),
+					sftp.WithServerWorkingDirectory(tempDir),
+				}
+				server, err := sftp.NewServer(
+					sess,
+					serverOptions...,
+				)
+				if err != nil {
+					logger.Printf("sftp server init error: %s", err)
+					return
+				}
+				if err := server.Serve(); err == io.EOF {
+					server.Close()
+					logger.Printf("sftp client exited session.")
+				} else if err != nil {
+					logger.Printf("sftp server completed with error: %s", err)
+				}
+			},
+		},
+	}
+	logger.Printf("Listening os %d", port)
+	ready <- struct{}{}
+	err := server.ListenAndServe()
+	if err != nil {
+		logger.Printf("Failed to start the SSH server: %s", err)
+	}
+}
+
+/*
 func Run(user, password string, privateKey []byte, ip string, port int, ready chan struct{}, tempDir string) {
 	log.Printf("sFTP: Run on %s:%d", ip, port)
 	// An SSH server is represented by a ServerConfig, which holds
@@ -132,7 +179,7 @@ func Run(user, password string, privateKey []byte, ip string, port int, ready ch
 		log.Print("sFTP: No more channels to process. Run once more")
 	}
 }
-
+*/
 /*
 func bindError(err error) bool {
 	var e syscall.Errno

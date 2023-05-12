@@ -17,7 +17,6 @@ import (
 	"time"
 
 	"github.com/mpkondrashin/certalert/pkg/certs"
-	"github.com/mpkondrashin/certalert/pkg/rsa"
 	"github.com/mpkondrashin/certalert/pkg/secureftp"
 	"github.com/mpkondrashin/certalert/pkg/sms"
 	"github.com/spf13/pflag"
@@ -168,10 +167,12 @@ func main() {
 	Configure()
 	localIP := GetLocalAddress()
 	log.Print("Generate private key")
-	privateKey, err := rsa.Private()
-	if err != nil {
-		log.Fatal(err)
-	}
+	/*
+		privateKey, err := rsa.Private()
+		if err != nil {
+			log.Fatal(err)
+		}
+	*/
 	port := 22
 	log.Printf("Run local sFTP server")
 	username := RandStringBytesRmndr(viper.GetInt(flagUsernameLength))
@@ -182,7 +183,7 @@ func main() {
 	}
 	log.Printf("Temp folder: %s", tempDir)
 	ready := make(chan struct{})
-	go secureftp.Run(username, password, privateKey, localIP, port, ready, tempDir)
+	go secureftp.Run(username, password, localIP, port, ready, tempDir)
 	smsClient := GetSMS()
 	backupName := GetBackupFileName()
 	backupPath := filepath.Join(tempDir, backupName)
