@@ -111,7 +111,7 @@ func GetBackupFileName() string {
 
 func RunBackup(smsClient *sms.SMS, username, password, localIP, backupName string) {
 	log.Printf("RunBackup(%v, %s, %s, %s, %s)", smsClient, username, password, localIP, backupName)
-	location := fmt.Sprintf("%s:%s", localIP, backupName)
+	location := fmt.Sprintf("%s:/%s", localIP, backupName)
 	//	location := fmt.Sprintf("%s:2022/%s", localIP, backupName)
 	password = url.QueryEscape(password)
 	options := sms.NewBackupDatabaseOptionsSFTP(location, username, password)
