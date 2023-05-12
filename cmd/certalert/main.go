@@ -184,6 +184,7 @@ func main() {
 	smsClient := GetSMS()
 	backupName := GetBackupFileName()
 	defer func(backupName string) {
+		log.Printf("Remove %s", backupName)
 		_ = os.Remove(backupName)
 	}(backupName)
 	time.Sleep(5 * time.Second)
