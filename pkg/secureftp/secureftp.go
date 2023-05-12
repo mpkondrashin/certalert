@@ -1,16 +1,20 @@
 package secureftp
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"log"
 	"net"
+	"os"
+	"syscall"
+	"time"
 
 	"github.com/pkg/sftp"
 	"golang.org/x/crypto/ssh"
 )
 
-func Run(user, password string, privateKey []byte, ip string, port int) {
+func Run(user, password string, privateKey []byte, ip string, port int, ready chan struct{}) {
 	log.Printf("sFTP: Run on %s:%d", ip, port)
 	// An SSH server is represented by a ServerConfig, which holds
 	// certificate details and handles authentication of ServerConns.
@@ -34,15 +38,25 @@ func Run(user, password string, privateKey []byte, ip string, port int) {
 	}
 
 	config.AddHostKey(private)
+	var listener net.Listener
+	addr := fmt.Sprintf("%s:%d", ip, port)
 	for {
-		// Once a ServerConfig has been configured, connections can be
-		// accepted.
-		listener, err := net.Listen("tcp", fmt.Sprintf("%s:%d", ip, port))
-		if err != nil {
-			log.Fatal("sFTP: Failed to listen for connection", err)
+		for i := 0; ; i++ {
+			if i == 10 {
+				log.Fatalf("sFTP: failed to bind to %s", addr)
+			}
+			listener, err = net.Listen("tcp", addr)
+			if err != nil {
+				if bindError(err) {
+					time.Sleep(500 * time.Millisecond)
+					continue
+				}
+				log.Fatalf("sFTP: Failed to listen for connection: %v", err)
+			}
+			break
 		}
 		log.Printf("sFTP: Listening on %v\n", listener.Addr())
-
+		ready <- struct{}{}
 		nConn, err := listener.Accept()
 		if err != nil {
 			log.Fatal("sFTP: Failed to accept incoming connection", err)
@@ -99,17 +113,15 @@ func Run(user, password string, privateKey []byte, ip string, port int) {
 					}
 				}
 			}(requests)
-
-			serverOptions := []sftp.ServerOption{}
-			//sftp.WithDebug(true),
-			//}
-
+			serverOptions := []sftp.ServerOption{
+				sftp.WithDebug(os.Stdout),
+			}
 			server, err := sftp.NewServer(
 				channel,
 				serverOptions...,
 			)
 			if err != nil {
-				log.Fatal(err)
+				log.Fatalf("sFTP: NewServer: %v", err)
 			}
 			if err := server.Serve(); err == io.EOF {
 				server.Close()
@@ -120,4 +132,12 @@ func Run(user, password string, privateKey []byte, ip string, port int) {
 		}
 		log.Print("sFTP: No more channels to process. Run once more")
 	}
+}
+
+func bindError(err error) bool {
+	var e syscall.Errno
+	if errors.As(err, &e) {
+		return e == syscall.EACCES
+	}
+	return false
 }

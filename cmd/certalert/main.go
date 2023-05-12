@@ -179,14 +179,16 @@ func main() {
 	log.Printf("Run local sFTP server")
 	username := RandStringBytesRmndr(viper.GetInt(flagUsernameLength))
 	password := RandStringBytesRmndr(viper.GetInt(flagPasswordLength))
-	go secureftp.Run(username, password, privateKey, localIP, port)
+	ready := make(chan struct{})
+	go secureftp.Run(username, password, privateKey, localIP, port, ready)
 	smsClient := GetSMS()
 	backupName := GetBackupFileName()
 	defer func(backupName string) {
 		log.Printf("Remove %s", backupName)
 		_ = os.Remove(backupName)
 	}(backupName)
-	time.Sleep(5 * time.Second)
+	<-ready
+	log.Print("sFTP is ready")
 	RunBackup(smsClient, username, password, localIP, backupName)
 	ProcessBackup(backupName)
 }
