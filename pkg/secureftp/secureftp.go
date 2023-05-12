@@ -11,26 +11,26 @@ import (
 )
 
 func Run(user, password string, privateKey []byte, ip string, port int) {
-
+	log.Printf("sFTP Run(%s, %s, %v, %s, %d)", user, password, privateKey, ip, port)
 	// An SSH server is represented by a ServerConfig, which holds
 	// certificate details and handles authentication of ServerConns.
 	config := &ssh.ServerConfig{
 		PasswordCallback: func(c ssh.ConnMetadata, pass []byte) (*ssh.Permissions, error) {
 			// Should use constant-time compare (or better, salt+hash) in
 			// a production setting.
-			log.Printf("Login: %s\n", c.User())
+			log.Printf("sFTP login: %s\n", c.User())
 			if c.User() == user && string(pass) == password {
-				log.Printf("User %s: access granted", c.User())
+				log.Printf("sFTP user %s: access granted", c.User())
 				return nil, nil
 			}
-			log.Printf("User %s: access denied", c.User())
+			log.Printf("sFTP user %s: access denied", c.User())
 			return nil, fmt.Errorf("password rejected for %q", c.User())
 		},
 	}
 
 	private, err := ssh.ParsePrivateKey(privateKey)
 	if err != nil {
-		log.Fatal("Failed to parse private key", err)
+		log.Fatal("sFTP failed to parse private key", err)
 	}
 
 	config.AddHostKey(private)
@@ -39,22 +39,22 @@ func Run(user, password string, privateKey []byte, ip string, port int) {
 	// accepted.
 	listener, err := net.Listen("tcp", fmt.Sprintf("%s:%d", ip, port))
 	if err != nil {
-		log.Fatal("failed to listen for connection", err)
+		log.Fatal("sFTP failed to listen for connection", err)
 	}
-	log.Printf("Listening on %v\n", listener.Addr())
+	log.Printf("sFTP is listening on %v\n", listener.Addr())
 
 	nConn, err := listener.Accept()
 	if err != nil {
-		log.Fatal("failed to accept incoming connection", err)
+		log.Fatal("sFTP failed to accept incoming connection", err)
 	}
-
+	log.Printf("sFTP Accepted connection: %v", nConn)
 	// Before use, a handshake must be performed on the incoming
 	// net.Conn.
 	_, chans, reqs, err := ssh.NewServerConn(nConn, config)
 	if err != nil {
-		log.Fatal("failed to handshake", err)
+		log.Fatal("sFTP failed to handshake", err)
 	}
-	log.Printf("SSH server established\n")
+	log.Printf("sFTP SSH server established\n")
 
 	// The incoming Request channel must be serviced.
 	go ssh.DiscardRequests(reqs)
