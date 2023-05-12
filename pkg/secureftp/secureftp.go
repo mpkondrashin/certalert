@@ -1,13 +1,11 @@
 package secureftp
 
 import (
-	"errors"
 	"fmt"
 	"io"
 	"log"
 	"net"
 	"os"
-	"syscall"
 	"time"
 
 	"github.com/pkg/sftp"
@@ -47,12 +45,11 @@ func Run(user, password string, privateKey []byte, ip string, port int, ready ch
 			}
 			listener, err = net.Listen("tcp", addr)
 			if err != nil {
-				if bindError(err) {
-					time.Sleep(500 * time.Millisecond)
-					continue
-				}
-				log.Fatalf("sFTP: Failed to listen for connection: %v", err)
-				log.Fatalf("sFTP: Failed to listen for connection: %T", err)
+				log.Printf("sFTP: Failed to listen for connection: %v", err)
+				//if bindError(err) {
+				time.Sleep(500 * time.Millisecond)
+				continue
+				//}
 			}
 			break
 		}
@@ -135,6 +132,7 @@ func Run(user, password string, privateKey []byte, ip string, port int, ready ch
 	}
 }
 
+/*
 func bindError(err error) bool {
 	var e syscall.Errno
 	if errors.As(err, &e) {
@@ -142,3 +140,4 @@ func bindError(err error) bool {
 	}
 	return false
 }
+|*/
