@@ -11,7 +11,7 @@ import (
 )
 
 func Run(user, password string, privateKey []byte, ip string, port int) {
-	log.Printf("sFTP Run(%s, %s, %v, %s, %d)", user, password, privateKey, ip, port)
+	log.Printf("sFTP Run(%s, %s, privateKey, %s, %d)", user, password, ip, port)
 	// An SSH server is represented by a ServerConfig, which holds
 	// certificate details and handles authentication of ServerConns.
 	config := &ssh.ServerConfig{
