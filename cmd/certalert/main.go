@@ -122,11 +122,6 @@ func RunBackup(smsClient *sms.SMS, username, password, localIP, backupName strin
 	if err != nil {
 		log.Fatalf("Backup database: %v", err)
 	}
-	info, err := os.Stat(backupName)
-	if err != nil {
-		log.Fatalf("Stat %s: %v", backupName, err)
-	}
-	log.Printf("Got backup file: %d byes", info.Size())
 }
 
 func ProcessBackup(backupName string) {
@@ -190,6 +185,7 @@ func main() {
 	go secureftp.Run(username, password, privateKey, localIP, port, ready, tempDir)
 	smsClient := GetSMS()
 	backupName := GetBackupFileName()
+	backupPath := filepath.Join(tempDir, backupName)
 	defer func(backupName string) {
 		log.Print("Remove temporary folder")
 		_ = os.RemoveAll(tempDir)
@@ -197,5 +193,10 @@ func main() {
 	<-ready
 	log.Print("sFTP is ready")
 	RunBackup(smsClient, username, password, localIP, backupName)
-	ProcessBackup(filepath.Join(tempDir, backupName))
+	info, err := os.Stat(backupPath)
+	if err != nil {
+		log.Fatalf("Stat %s: %v", backupPath, err)
+	}
+	log.Printf("Got backup file: %d byes", info.Size())
+	ProcessBackup(backupPath)
 }
