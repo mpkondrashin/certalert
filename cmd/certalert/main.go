@@ -112,7 +112,7 @@ func GetBackupFileName() string {
 
 func RunBackup(smsClient *sms.SMS, username, password, localIP, backupName string) {
 	log.Printf("RunBackup(%v, %s, %s, %s, %s)", smsClient, username, password, localIP, backupName)
-	location := fmt.Sprintf("%s:/%s", localIP, backupName)
+	location := fmt.Sprintf("%s:%s", localIP, backupName)
 	//	location := fmt.Sprintf("%s:2022/%s", localIP, backupName)
 	password = url.QueryEscape(password)
 	options := sms.NewBackupDatabaseOptionsSFTP(location, username, password)
@@ -188,14 +188,14 @@ func main() {
 	backupPath := filepath.Join(tempDir, backupName)
 	defer func(backupName string) {
 		log.Print("Remove temporary folder")
-		_ = os.RemoveAll(tempDir)
+		//_ = os.RemoveAll(tempDir)
 	}(backupName)
 	<-ready
 	log.Print("sFTP is ready")
 	RunBackup(smsClient, username, password, localIP, backupName)
 	info, err := os.Stat(backupPath)
 	if err != nil {
-		log.Fatalf("Stat %s: %v", backupPath, err)
+		log.Fatalf("Stat: %v", err)
 	}
 	log.Printf("Got backup file: %d byes", info.Size())
 	ProcessBackup(backupPath)

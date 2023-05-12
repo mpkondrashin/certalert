@@ -19,7 +19,7 @@ func Run(user, password string, privateKey []byte, ip string, port int, ready ch
 		PasswordCallback: func(c ssh.ConnMetadata, pass []byte) (*ssh.Permissions, error) {
 			// Should use constant-time compare (or better, salt+hash) in
 			// a production setting.
-			log.Printf("sFTP: Login: %s\n", c.User())
+			log.Printf("sFTP: Login: %s", c.User())
 			if c.User() == user && string(pass) == password {
 				log.Printf("sFTP: User %s: access granted", c.User())
 				return nil, nil
@@ -52,21 +52,21 @@ func Run(user, password string, privateKey []byte, ip string, port int, ready ch
 	}
 	//	break
 	//	}
-	log.Printf("sFTP: Listening on %v\n", listener.Addr())
+	log.Printf("sFTP: Listening on %s", listener.Addr())
 	ready <- struct{}{}
 	for {
 		nConn, err := listener.Accept()
 		if err != nil {
 			log.Fatal("sFTP: Failed to accept incoming connection", err)
 		}
-		log.Printf("sFTP: Accepted connection: %v", nConn)
+		log.Print("sFTP: Accepted connection")
 		// Before use, a handshake must be performed on the incoming
 		// net.Conn.
 		_, chans, reqs, err := ssh.NewServerConn(nConn, config)
 		if err != nil {
 			log.Fatal("sFTP: Failed to handshake", err)
 		}
-		log.Printf("sFTP: SSH server established\n")
+		log.Printf("sFTP: SSH server established")
 
 		// The incoming Request channel must be serviced.
 		go ssh.DiscardRequests(reqs)
@@ -76,7 +76,7 @@ func Run(user, password string, privateKey []byte, ip string, port int, ready ch
 			// Channels have a type, depending on the application level
 			// protocol intended. In the case of an SFTP session, this is "subsystem"
 			// with a payload string of "<length=4>sftp"
-			log.Printf("sFTP: Incoming channel: %s\n", newChannel.ChannelType())
+			log.Printf("sFTP: Incoming channel: %s", newChannel.ChannelType())
 			if newChannel.ChannelType() != "session" {
 				err := newChannel.Reject(ssh.UnknownChannelType, "unknown channel type")
 				if err != nil {
@@ -89,7 +89,7 @@ func Run(user, password string, privateKey []byte, ip string, port int, ready ch
 			if err != nil {
 				log.Fatalf("sFTP: Could not accept channel: %v", err)
 			}
-			log.Printf("sFTP: Channel accepted\n")
+			log.Printf("sFTP: Channel accepted")
 
 			// Sessions have out-of-band requests such as "shell",
 			// "pty-req" and "env".  Here we handle only the
