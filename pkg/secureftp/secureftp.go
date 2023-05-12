@@ -6,7 +6,6 @@ import (
 	"log"
 	"net"
 	"os"
-	"time"
 
 	"github.com/pkg/sftp"
 	"golang.org/x/crypto/ssh"
@@ -38,23 +37,24 @@ func Run(user, password string, privateKey []byte, ip string, port int, ready ch
 	config.AddHostKey(private)
 	var listener net.Listener
 	addr := fmt.Sprintf("%s:%d", ip, port)
+	//for i := 0; ; i++ {
+	//	if i == 10 {
+	//		log.Fatalf("sFTP: failed to bind to %s", addr)
+	//	}
+	listener, err = net.Listen("tcp", addr)
+	if err != nil {
+		//log.Printf("sFTP: Failed to listen for connection: %v", err)
+		log.Fatalf("sFTP: Failed to listen for connection: %v", err)
+		//if bindError(err) {
+		//		time.Sleep(500 * time.Millisecond)
+		//		continue
+		//}
+	}
+	//	break
+	//	}
+	log.Printf("sFTP: Listening on %v\n", listener.Addr())
+	ready <- struct{}{}
 	for {
-		for i := 0; ; i++ {
-			if i == 10 {
-				log.Fatalf("sFTP: failed to bind to %s", addr)
-			}
-			listener, err = net.Listen("tcp", addr)
-			if err != nil {
-				log.Printf("sFTP: Failed to listen for connection: %v", err)
-				//if bindError(err) {
-				time.Sleep(500 * time.Millisecond)
-				continue
-				//}
-			}
-			break
-		}
-		log.Printf("sFTP: Listening on %v\n", listener.Addr())
-		ready <- struct{}{}
 		nConn, err := listener.Accept()
 		if err != nil {
 			log.Fatal("sFTP: Failed to accept incoming connection", err)
