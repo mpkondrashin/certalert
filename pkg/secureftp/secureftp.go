@@ -11,7 +11,7 @@ import (
 )
 
 func Run(user, password string, privateKey []byte, ip string, port int) {
-	log.Printf("sFTP Run(%s, *****, privateKey, %s, %d)", user, ip, port)
+	log.Printf("sFTP: Run on %s:%d", ip, port)
 	// An SSH server is represented by a ServerConfig, which holds
 	// certificate details and handles authentication of ServerConns.
 	config := &ssh.ServerConfig{
@@ -34,85 +34,85 @@ func Run(user, password string, privateKey []byte, ip string, port int) {
 	}
 
 	config.AddHostKey(private)
-
-	// Once a ServerConfig has been configured, connections can be
-	// accepted.
-	listener, err := net.Listen("tcp", fmt.Sprintf("%s:%d", ip, port))
-	if err != nil {
-		log.Fatal("sFTP: Failed to listen for connection", err)
-	}
-	log.Printf("sFTP: Listening on %v\n", listener.Addr())
-
-	nConn, err := listener.Accept()
-	if err != nil {
-		log.Fatal("sFTP: Failed to accept incoming connection", err)
-	}
-	log.Printf("sFTP: Accepted connection: %v", nConn)
-	// Before use, a handshake must be performed on the incoming
-	// net.Conn.
-	_, chans, reqs, err := ssh.NewServerConn(nConn, config)
-	if err != nil {
-		log.Fatal("sFTP: Failed to handshake", err)
-	}
-	log.Printf("sFTP: SSH server established\n")
-
-	// The incoming Request channel must be serviced.
-	go ssh.DiscardRequests(reqs)
-
-	// Service the incoming Channel channel.
-	for newChannel := range chans {
-		// Channels have a type, depending on the application level
-		// protocol intended. In the case of an SFTP session, this is "subsystem"
-		// with a payload string of "<length=4>sftp"
-		log.Printf("sFTP: Incoming channel: %s\n", newChannel.ChannelType())
-		if newChannel.ChannelType() != "session" {
-			newChannel.Reject(ssh.UnknownChannelType, "unknown channel type")
-			log.Printf("sFTP: Unknown channel type: %s\n", newChannel.ChannelType())
-			continue
-		}
-		channel, requests, err := newChannel.Accept()
+	for {
+		// Once a ServerConfig has been configured, connections can be
+		// accepted.
+		listener, err := net.Listen("tcp", fmt.Sprintf("%s:%d", ip, port))
 		if err != nil {
-			log.Fatal("sFTP: Could not accept channel.", err)
+			log.Fatal("sFTP: Failed to listen for connection", err)
 		}
-		log.Printf("sFTP: Channel accepted\n")
+		log.Printf("sFTP: Listening on %v\n", listener.Addr())
 
-		// Sessions have out-of-band requests such as "shell",
-		// "pty-req" and "env".  Here we handle only the
-		// "subsystem" request.
-		go func(in <-chan *ssh.Request) {
-			for req := range in {
-				log.Printf("sFTP: Request: %v", req.Type)
-				ok := false
-				switch req.Type {
-				case "subsystem":
-					log.Printf("sFTP: Subsystem: %s", req.Payload[4:])
-					if string(req.Payload[4:]) == "sftp" {
-						ok = true
-					}
-				}
-				log.Printf("sFTP: Accepted: %v", ok)
-				req.Reply(ok, nil)
+		nConn, err := listener.Accept()
+		if err != nil {
+			log.Fatal("sFTP: Failed to accept incoming connection", err)
+		}
+		log.Printf("sFTP: Accepted connection: %v", nConn)
+		// Before use, a handshake must be performed on the incoming
+		// net.Conn.
+		_, chans, reqs, err := ssh.NewServerConn(nConn, config)
+		if err != nil {
+			log.Fatal("sFTP: Failed to handshake", err)
+		}
+		log.Printf("sFTP: SSH server established\n")
+
+		// The incoming Request channel must be serviced.
+		go ssh.DiscardRequests(reqs)
+
+		// Service the incoming Channel channel.
+		for newChannel := range chans {
+			// Channels have a type, depending on the application level
+			// protocol intended. In the case of an SFTP session, this is "subsystem"
+			// with a payload string of "<length=4>sftp"
+			log.Printf("sFTP: Incoming channel: %s\n", newChannel.ChannelType())
+			if newChannel.ChannelType() != "session" {
+				newChannel.Reject(ssh.UnknownChannelType, "unknown channel type")
+				log.Printf("sFTP: Unknown channel type: %s\n", newChannel.ChannelType())
+				continue
 			}
-		}(requests)
+			channel, requests, err := newChannel.Accept()
+			if err != nil {
+				log.Fatal("sFTP: Could not accept channel.", err)
+			}
+			log.Printf("sFTP: Channel accepted\n")
 
-		serverOptions := []sftp.ServerOption{}
-		//sftp.WithDebug(true),
-		//}
+			// Sessions have out-of-band requests such as "shell",
+			// "pty-req" and "env".  Here we handle only the
+			// "subsystem" request.
+			go func(in <-chan *ssh.Request) {
+				for req := range in {
+					log.Printf("sFTP: Request: %v", req.Type)
+					ok := false
+					switch req.Type {
+					case "subsystem":
+						log.Printf("sFTP: Subsystem: %s", req.Payload[4:])
+						if string(req.Payload[4:]) == "sftp" {
+							ok = true
+						}
+					}
+					log.Printf("sFTP: Accepted: %v", ok)
+					req.Reply(ok, nil)
+				}
+			}(requests)
 
-		server, err := sftp.NewServer(
-			channel,
-			serverOptions...,
-		)
-		if err != nil {
-			log.Fatal(err)
+			serverOptions := []sftp.ServerOption{}
+			//sftp.WithDebug(true),
+			//}
+
+			server, err := sftp.NewServer(
+				channel,
+				serverOptions...,
+			)
+			if err != nil {
+				log.Fatal(err)
+			}
+			if err := server.Serve(); err == io.EOF {
+				server.Close()
+				log.Print("sFTP: Client exited session.")
+			} else if err != nil {
+				log.Fatal("sFTP: server completed with error:", err)
+			}
 		}
-		if err := server.Serve(); err == io.EOF {
-			server.Close()
-			log.Print("sFTP: Client exited session.")
-		} else if err != nil {
-			log.Fatal("sFTP: server completed with error:", err)
-		}
+		log.Print("sFTP: No more channels to process. Run once more")
 	}
-	log.Print("sFTP: No more channels to process. Exiting")
-
 }

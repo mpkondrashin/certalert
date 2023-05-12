@@ -98,6 +98,7 @@ func GetLocalAddress() string {
 	if err != nil {
 		log.Fatal(err)
 	}
+	log.Printf("SMS connection succeeded")
 	log.Printf("Local address %v", localIP)
 	return localIP.String()
 }
@@ -178,8 +179,6 @@ func main() {
 	log.Printf("Run local sFTP server")
 	username := RandStringBytesRmndr(viper.GetInt(flagUsernameLength))
 	password := RandStringBytesRmndr(viper.GetInt(flagPasswordLength))
-	log.Print("1Username: ", username)
-	log.Print("1Password: ", password)
 	go secureftp.Run(username, password, privateKey, localIP, port)
 	smsClient := GetSMS()
 	backupName := GetBackupFileName()
@@ -188,8 +187,6 @@ func main() {
 		_ = os.Remove(backupName)
 	}(backupName)
 	time.Sleep(5 * time.Second)
-	log.Print("2Username: ", username)
-	log.Print("2Password: ", password)
 	RunBackup(smsClient, username, password, localIP, backupName)
 	ProcessBackup(backupName)
 }
