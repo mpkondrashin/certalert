@@ -13,6 +13,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"time"
 
@@ -109,7 +110,19 @@ func GetBackupFileName() string {
 	return backupBaseName + ".zip"
 }
 
+func FilterBackupPath(backupPath string) string {
+	if runtime.GOOS != "windows" {
+		return backupPath
+	}
+	if !strings.HasPrefix(backupPath, "C:") {
+		log.Fatalf("TEMP is not on C: drive: %s", backupPath)
+	}
+	backupPath = backupPath[2:]
+	return strings.ReplaceAll(backupPath, "\\", "/")
+}
+
 func RunBackup(smsClient *sms.SMS, username, password, localIP, backupPath string) {
+	backupPath = FilterBackupPath(backupPath)
 	log.Printf("RunBackup(%v, %s, %s, %s, %s)", smsClient, username, password, localIP, backupPath)
 	location := fmt.Sprintf("%s:%s", localIP, backupPath)
 	//	location := fmt.Sprintf("%s:2022/%s", localIP, backupName)
