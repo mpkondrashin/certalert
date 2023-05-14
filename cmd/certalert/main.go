@@ -8,8 +8,10 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"log/syslog"
 	"math/rand"
 	"net"
+	"net/smtp"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -45,14 +47,38 @@ const (
 	flagUsernameLength     = "u_length"
 	flagPasswordLength     = "p_length"
 	flagTempDir            = "temp"
+	flagThresholdDays      = "days"
+	flagSyslogProto        = "syslog.proto"
+	flagSyslogHost         = "syslog.host"
+	flagSyslogPort         = "syslog.port"
+	flagSyslogTag          = "syslog.tag"
+	flagSMTPFrom           = "smtp.from"
+	flagSMTPTo             = "smtp.to"
+	flagSMTPPassword       = "smtp.password"
+	flagSMTPHost           = "smtp.host"
+	flagSMTPPort           = "smtp.port"
 )
 
 func Configure() {
 	fs := pflag.NewFlagSet("", pflag.ExitOnError)
+
+	fs.String(flagSMSAddress, "", "Tipping Point SMS address")
 	fs.String(flagSMSAPIKey, "", "Tipping Point SMS API Key")
 	fs.Bool(flagSMSIgnoreTLSErrors, false, "Ignore SMS TLS errors")
+
 	fs.Int(flagUsernameLength, DefaultUsernameLength, "sFTP username length")
 	fs.Int(flagPasswordLength, DefaultPasswordLength, "sFTP password length")
+	fs.Int(flagThresholdDays, 14, "Alert on certificates to be expired within provided number of days")
+
+	fs.String(flagSyslogProto, "udp", "Syslog protocol (udp/tcp)")
+	fs.String(flagSyslogHost, "", "Syslog host")
+	fs.Int(flagSyslogPort, 514, "Syslog port")
+	fs.String(flagSyslogTag, "certalert", "Syslog tag")
+
+	fs.String(flagSMTPFrom, "", "SMTP from email")
+	fs.String(flagSMTPTo, "", "SMTP email to send alerts")
+	fs.Int(flagSMTPPort, 25, "SMTP port")
+	fs.String(flagSMTPHost, "", "SMTP server address")
 
 	err := fs.Parse(os.Args[1:])
 	if err != nil {
@@ -84,6 +110,11 @@ func Configure() {
 	}
 	if viper.GetString(flagSMSAPIKey) == "" {
 		log.Fatalf("Missing %s", flagSMSAPIKey)
+	}
+	switch viper.GetString(flagSyslogProto) {
+	case "tcp", "udp":
+	default:
+		log.Fatalf("%s: syslog protocol is not udp or tcp")
 	}
 }
 
@@ -136,21 +167,86 @@ func RunBackup(smsClient *sms.SMS, username, password, localIP, backupPath strin
 	}
 }
 
-func ProcessBackup(backupName string) {
+func IterateExpiredCertificate(backupName string, callback func(cert *x509.Certificate) error) error {
 	log.Print("Process backup")
-	err := certs.Iterate(backupName, func(cert *x509.Certificate) error {
-		log.Print("Version: ", cert.Version)
-		log.Print("SerialNumber: ", cert.SerialNumber)
-		log.Print("Issuer: ", cert.Issuer)
-		log.Print("Subject: ", cert.Subject)
-		log.Print("KeyUsage: ", cert.KeyUsage)
-		log.Print("Not before: ", cert.NotBefore)
-		log.Print("Not after: ", cert.NotAfter)
+	interval := time.Duration(viper.GetInt(flagThresholdDays)) * time.Hour * 24
+	threshold := time.Now().Add(interval)
+	return certs.Iterate(backupName, func(cert *x509.Certificate) error {
+		aboutToExpire := cert.NotAfter.After(threshold)
+		log.Printf("Update required: %v, SerialNumber: %v, Issuer: %s, Subject: %s, Expire date: %v",
+			aboutToExpire, cert.SerialNumber, cert.Issuer, cert.Subject, cert.NotAfter)
+		if aboutToExpire {
+			return callback(cert)
+		}
+		return nil
+	})
+
+}
+
+func GetSyslog() (*syslog.Writer, error) {
+	host := viper.GetString(flagSyslogHost)
+	if host == "" {
+		return nil, nil
+	}
+	port := viper.GetInt(flagSyslogPort)
+	proto := viper.GetString(flagSyslogProto)
+	address := fmt.Sprintf("%s:%d", host, port)
+	tag := viper.GetString(flagSyslogTag)
+	priority := syslog.LOG_WARNING | syslog.LOG_DAEMON
+	return syslog.Dial(proto, address, priority, tag)
+}
+
+func ProcessBackup(backupName string) {
+	sysLog, err := GetSyslog()
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = IterateExpiredCertificate(backupName, func(cert *x509.Certificate) error {
+		if sysLog != nil {
+			_, err := fmt.Fprintf(sysLog, "SerialNumber: %v, Issuer: %s, Subject: %s, Expire date: %v",
+				cert.SerialNumber, cert.Issuer, cert.Subject, cert.NotAfter)
+			if err != nil {
+				log.Print(err)
+			} else {
+				log.Print("Syslog sent successfully!")
+			}
+		} else {
+			log.Print("Syslog is not configured - skip sending")
+		}
+		if err := SendMail(cert); err != nil {
+			log.Print(err)
+		} else {
+			log.Print("Email sent successfully!")
+		}
 		return nil
 	})
 	if err != nil {
 		log.Fatal(err)
 	}
+}
+
+func SendMail(cert *x509.Certificate) error {
+	host := viper.GetString(flagSMTPHost)
+	if host == "" {
+		return fmt.Errorf("%s is empty - skip sending email", flagSMTPHost)
+	}
+	port := viper.GetInt(flagSMTPPort)
+
+	password := viper.GetString(flagSMTPPassword)
+
+	from := viper.GetString(flagSMTPFrom)
+	to := strings.Split(viper.GetString(flagSMTPTo), ",")
+
+	subject := "CertAlert"
+	text := fmt.Sprintf("Subject: %s\r\n\r\nSerialNumber: %v\r\nIssuer: %s\r\nSubject: %s\r\nExpire date: %v",
+		subject, cert.SerialNumber, cert.Issuer, cert.Subject, cert.NotAfter)
+
+	message := []byte(text)
+
+	auth := smtp.PlainAuth("", from, password, host)
+
+	address := fmt.Sprintf("%s:%d", host, port)
+	return smtp.SendMail(address, auth, from, to, message)
 }
 
 func GetOutboundIP(address string) (net.IP, error) {

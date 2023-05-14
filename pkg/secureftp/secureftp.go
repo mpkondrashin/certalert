@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	logger = log.New(os.Stdout, "SFTP: ", 0)
+	logger = log.New(os.Stdout, "SFTP: ", log.LstdFlags)
 )
 
 func getPasswordHandler(password string) func(ssh.Context, string) bool {
@@ -26,7 +26,7 @@ func Run(user, password string, ip string, port int, ready chan struct{}) { //},
 		PasswordHandler: ssh.PasswordHandler(getPasswordHandler(password)),
 		SubsystemHandlers: map[string]ssh.SubsystemHandler{
 			"sftp": func(sess ssh.Session) {
-				logger.Printf("SFTP attempt")
+				logger.Printf("Attempt")
 				debugStream := os.Stdout
 				serverOptions := []sftp.ServerOption{
 					sftp.WithDebug(debugStream),
@@ -37,14 +37,14 @@ func Run(user, password string, ip string, port int, ready chan struct{}) { //},
 					serverOptions...,
 				)
 				if err != nil {
-					logger.Printf("sftp server init error: %s", err)
+					logger.Printf("Server init error: %s", err)
 					return
 				}
 				if err := server.Serve(); err == io.EOF {
 					server.Close()
-					logger.Printf("sftp client exited session.")
+					logger.Printf("Client exited session.")
 				} else if err != nil {
-					logger.Printf("sftp server completed with error: %s", err)
+					logger.Printf("Server completed with error: %s", err)
 				}
 			},
 		},
