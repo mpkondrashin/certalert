@@ -20,7 +20,7 @@ func getPasswordHandler(password string) func(ssh.Context, string) bool {
 	})
 }
 
-func Run(user, password string, ip string, port int, ready chan struct{}, tempDir string) {
+func Run(user, password string, ip string, port int, ready chan struct{}) { //}, tempDir string) {
 	server := ssh.Server{
 		Addr:            fmt.Sprintf("%s:%d", ip, port), // IP and PORT to connect on
 		PasswordHandler: ssh.PasswordHandler(getPasswordHandler(password)),
@@ -30,7 +30,7 @@ func Run(user, password string, ip string, port int, ready chan struct{}, tempDi
 				debugStream := os.Stdout
 				serverOptions := []sftp.ServerOption{
 					sftp.WithDebug(debugStream),
-					sftp.WithServerWorkingDirectory(tempDir),
+					//sftp.WithServerWorkingDirectory(tempDir),
 				}
 				server, err := sftp.NewServer(
 					sess,

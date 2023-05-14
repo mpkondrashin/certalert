@@ -109,9 +109,9 @@ func GetBackupFileName() string {
 	return backupBaseName + ".zip"
 }
 
-func RunBackup(smsClient *sms.SMS, username, password, localIP, backupName string) {
-	log.Printf("RunBackup(%v, %s, %s, %s, %s)", smsClient, username, password, localIP, backupName)
-	location := fmt.Sprintf("%s:/%s", localIP, backupName)
+func RunBackup(smsClient *sms.SMS, username, password, localIP, backupPath string) {
+	log.Printf("RunBackup(%v, %s, %s, %s, %s)", smsClient, username, password, localIP, backupPath)
+	location := fmt.Sprintf("%s:%s", localIP, backupPath)
 	//	location := fmt.Sprintf("%s:2022/%s", localIP, backupName)
 	password = url.QueryEscape(password)
 	options := sms.NewBackupDatabaseOptionsSFTP(location, username, password)
@@ -183,7 +183,7 @@ func main() {
 	}
 	log.Printf("Temp folder: %s", tempDir)
 	ready := make(chan struct{})
-	go secureftp.Run(username, password, localIP, port, ready, tempDir)
+	go secureftp.Run(username, password, localIP, port, ready)
 	smsClient := GetSMS()
 	backupName := GetBackupFileName()
 	backupPath := filepath.Join(tempDir, backupName)
@@ -193,7 +193,7 @@ func main() {
 	}(backupName)
 	<-ready
 	log.Print("sFTP is ready")
-	RunBackup(smsClient, username, password, localIP, backupName)
+	RunBackup(smsClient, username, password, localIP, backupPath)
 	info, err := os.Stat(backupPath)
 	if err != nil {
 		log.Fatalf("Stat: %v", err)
