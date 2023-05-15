@@ -216,7 +216,7 @@ func ProcessBackup(backupName string) {
 				log.Print("Syslog sent successfully!")
 			}
 		} else {
-			log.Print("Syslog is not configured - skip sending")
+			log.Printf("%s is empty - skip sending syslog", flagSyslogHost)
 		}
 		if err := SendMail(cert); err != nil {
 			log.Print(err)

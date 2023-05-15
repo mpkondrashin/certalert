@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	logger = log.New(os.Stdout, "SFTP: ", log.LstdFlags)
+	logger = log.New(os.Stdout, "", log.LstdFlags)
 )
 
 func getPasswordHandler(password string) func(ssh.Context, string) bool {
@@ -26,7 +26,7 @@ func Run(user, password string, ip string, port int, ready chan struct{}) { //},
 		PasswordHandler: ssh.PasswordHandler(getPasswordHandler(password)),
 		SubsystemHandlers: map[string]ssh.SubsystemHandler{
 			"sftp": func(sess ssh.Session) {
-				logger.Printf("Attempt")
+				logger.Printf("sFTP: Attempt")
 				debugStream := os.Stdout
 				serverOptions := []sftp.ServerOption{
 					sftp.WithDebug(debugStream),
@@ -37,23 +37,23 @@ func Run(user, password string, ip string, port int, ready chan struct{}) { //},
 					serverOptions...,
 				)
 				if err != nil {
-					logger.Printf("Server init error: %s", err)
+					logger.Printf("sFTP: Server init error: %s", err)
 					return
 				}
 				if err := server.Serve(); err == io.EOF {
 					server.Close()
-					logger.Printf("Client exited session.")
+					logger.Printf("sFTP: Client exited session.")
 				} else if err != nil {
-					logger.Printf("Server completed with error: %s", err)
+					logger.Printf("sFTP: Server completed with error: %s", err)
 				}
 			},
 		},
 	}
-	logger.Printf("Listening os %d", port)
+	logger.Printf("sFTP: Listening os %d", port)
 	ready <- struct{}{}
 	err := server.ListenAndServe()
 	if err != nil {
-		logger.Printf("Failed to start the SSH server: %s", err)
+		logger.Printf("sFTP: Failed to start the SSH server: %s", err)
 	}
 }
 
