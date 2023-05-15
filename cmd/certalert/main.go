@@ -49,8 +49,8 @@ const (
 	flagSMSAddress         = "sms.address"
 	flagSMSAPIKey          = "sms.api_key"
 	flagSMSIgnoreTLSErrors = "sms.ignore_tls_errors"
-	flagUsernameLength     = "u_length"
-	flagPasswordLength     = "p_length"
+	flagSFTPUsernameLength = "sftp.username_length"
+	flagSFTPPasswordLength = "sftp.password_length"
 	flagTempDir            = "temp"
 	flagThresholdDays      = "days"
 	flagSyslogProto        = "syslog.proto"
@@ -71,8 +71,8 @@ func Configure() {
 	fs.String(flagSMSAPIKey, "", "Tipping Point SMS API Key")
 	fs.Bool(flagSMSIgnoreTLSErrors, false, "Ignore SMS TLS errors")
 
-	fs.Int(flagUsernameLength, DefaultUsernameLength, "sFTP username length")
-	fs.Int(flagPasswordLength, DefaultPasswordLength, "sFTP password length")
+	fs.Int(flagSFTPUsernameLength, DefaultUsernameLength, "sFTP username length")
+	fs.Int(flagSFTPPasswordLength, DefaultPasswordLength, "sFTP password length")
 	fs.Int(flagThresholdDays, 14, "Alert on certificates to be expired within provided number of days")
 
 	fs.String(flagSyslogProto, "udp", "Syslog protocol (udp/tcp)")
@@ -279,6 +279,13 @@ func RandStringBytesRmndr(n int) string {
 
 func main() {
 	Configure()
+	if len(os.Args) == 2 {
+		_, err := os.Stat(os.Args[1])
+		if err == nil {
+			ProcessBackup(os.Args[1])
+			return
+		}
+	}
 	localIP := GetLocalAddress()
 	log.Print("Generate private key")
 	/*
@@ -289,8 +296,8 @@ func main() {
 	*/
 	port := 22
 	log.Printf("Run local sFTP server")
-	username := RandStringBytesRmndr(viper.GetInt(flagUsernameLength))
-	password := RandStringBytesRmndr(viper.GetInt(flagPasswordLength))
+	username := RandStringBytesRmndr(viper.GetInt(flagSFTPUsernameLength))
+	password := RandStringBytesRmndr(viper.GetInt(flagSFTPPasswordLength))
 	tempDir, err := ioutil.TempDir(viper.GetString(flagTempDir), "ca-*")
 	if err != nil {
 		log.Fatalf("TempDir: %v", err)
