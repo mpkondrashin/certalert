@@ -67,6 +67,7 @@ const (
 	flagSyslogSignature = "syslog.signature"
 	flagSyslogName      = "syslog.name"
 	flagSyslogSeverity  = "syslog.severity"
+	flagSyslogFacility  = "syslog.facility"
 
 	flagSMTPFrom     = "smtp.from"
 	flagSMTPTo       = "smtp.to"
@@ -95,7 +96,8 @@ func Configure() {
 	fs.String(flagSyslogVersion, "0", "CEF Version field value")
 	fs.String(flagSyslogSignature, "cert", "CEF Signature ID field value")
 	fs.String(flagSyslogName, "Certificate Update Required", "CEF Name field value")
-	fs.Int(flagSyslogSeverity, 5, "CEF Severity field value (0 - Emergency, 7 - Debug. Defatlt 5 - Warning)")
+	fs.Int(flagSyslogSeverity, 4, "CEF and Syslog Severity field value (0 - Emergency, 7 - Debug. Defatlt 4 - Warning)")
+	fs.Int(flagSyslogFacility, 0, "Sys local facility number (0 - Local0, 7 - Local7")
 
 	fs.String(flagSMTPFrom, "", "SMTP from email")
 	fs.String(flagSMTPTo, "", "SMTP email to send alerts")
@@ -205,6 +207,25 @@ func IterateExpiredCertificate(backupName string, callback func(cert *x509.Certi
 
 }
 
+func GetFacility(facility int) syslog.Priority {
+	if facility < 0 {
+		facility = 0
+	}
+	if facility > 7 {
+		facility = 7
+	}
+	return [...]syslog.Priority{
+		syslog.LOG_LOCAL0,
+		syslog.LOG_LOCAL1,
+		syslog.LOG_LOCAL2,
+		syslog.LOG_LOCAL3,
+		syslog.LOG_LOCAL4,
+		syslog.LOG_LOCAL5,
+		syslog.LOG_LOCAL6,
+		syslog.LOG_LOCAL7,
+	}[facility]
+}
+
 func GetSyslog() (*syslog.Writer, error) {
 	host := viper.GetString(flagSyslogHost)
 	if host == "" {
@@ -215,6 +236,7 @@ func GetSyslog() (*syslog.Writer, error) {
 	address := fmt.Sprintf("%s:%d", host, port)
 	tag := viper.GetString(flagSyslogTag)
 	priority := syslog.Priority(viper.GetInt(flagSyslogSeverity))
+	priority |= GetFacility(viper.GetInt(flagSyslogFacility))
 	return syslog.Dial(proto, address, priority, tag)
 }
 
