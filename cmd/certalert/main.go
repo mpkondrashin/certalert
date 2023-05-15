@@ -256,10 +256,6 @@ func GetCEFLogger() (*ceflog.Logger, error) {
 }
 
 func ProcessBackup(backupName string) {
-	/*sysLog, err := GetSyslog()
-	if err != nil {
-		log.Fatal(err)
-	}*/
 	logger, err := GetCEFLogger()
 	if err != nil {
 		log.Fatal(err)
@@ -270,7 +266,9 @@ func ProcessBackup(backupName string) {
 				viper.GetString(flagSyslogSignature),
 				viper.GetString(flagSyslogName),
 				ceflog.Sev(viper.GetInt(flagSyslogSeverity)),
-				ceflog.Ext("SerialNumber", cert.SerialNumber.String(),
+				ceflog.Ext(
+					"SMS", viper.GetString(flagSMSAddress),
+					"SerialNumber", cert.SerialNumber.String(),
 					"Issuer", cert.Issuer.String(),
 					"Subject", cert.Subject.String(),
 					"ExpireDate", cert.NotAfter.String()),
