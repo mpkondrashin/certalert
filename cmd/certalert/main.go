@@ -47,22 +47,29 @@ const (
 )
 
 const (
+	flagTempDir       = "temp"
+	flagThresholdDays = "days"
+
 	flagSMSAddress         = "sms.address"
 	flagSMSAPIKey          = "sms.api_key"
 	flagSMSIgnoreTLSErrors = "sms.ignore_tls_errors"
+
 	flagSFTPUsernameLength = "sftp.username_length"
 	flagSFTPPasswordLength = "sftp.password_length"
-	flagTempDir            = "temp"
-	flagThresholdDays      = "days"
-	flagSyslogProto        = "syslog.proto"
-	flagSyslogHost         = "syslog.host"
-	flagSyslogPort         = "syslog.port"
-	flagSyslogTag          = "syslog.tag"
-	flagSMTPFrom           = "smtp.from"
-	flagSMTPTo             = "smtp.to"
-	flagSMTPPassword       = "smtp.password"
-	flagSMTPHost           = "smtp.host"
-	flagSMTPPort           = "smtp.port"
+
+	flagSyslogProto     = "syslog.proto"
+	flagSyslogHost      = "syslog.host"
+	flagSyslogPort      = "syslog.port"
+	flagSyslogTag       = "syslog.tag"
+	flagSyslogSignature = "syslog.signature"
+	flagSyslogName      = "syslog.name"
+	flagSyslogSeverity  = "syslog.severity"
+
+	flagSMTPFrom     = "smtp.from"
+	flagSMTPTo       = "smtp.to"
+	flagSMTPPassword = "smtp.password"
+	flagSMTPHost     = "smtp.host"
+	flagSMTPPort     = "smtp.port"
 )
 
 func Configure() {
@@ -80,6 +87,9 @@ func Configure() {
 	fs.String(flagSyslogHost, "", "Syslog host")
 	fs.Int(flagSyslogPort, 514, "Syslog port")
 	fs.String(flagSyslogTag, "certalert", "Syslog tag")
+	fs.String(flagSyslogSignature, "cert", "CEF Signature ID field value")
+	fs.String(flagSyslogName, "Certificate Update Required", "CEF Name field value")
+	fs.Int(flagSyslogSeverity, 5, "CEF Severity field value (0 - Emergency, 7 - Debug. Defatlt 5 - Warning)")
 
 	fs.String(flagSMTPFrom, "", "SMTP from email")
 	fs.String(flagSMTPTo, "", "SMTP email to send alerts")
@@ -226,10 +236,11 @@ func ProcessBackup(backupName string) {
 
 	err = IterateExpiredCertificate(backupName, func(cert *x509.Certificate) error {
 		if logger != nil {
+
 			logger.LogEvent(
-				"auth.new",
-				"Cert Alert",
-				ceflog.Sev(0),
+				viper.GetString(flagSyslogSignature),
+				viper.GetString(flagSyslogName),
+				ceflog.Sev(viper.GetInt(flagSyslogSeverity)),
 				ceflog.Ext("SerialNumber", cert.SerialNumber.String(),
 					"Issuer", cert.Issuer.String(),
 					"Subject", cert.Subject.String(),
