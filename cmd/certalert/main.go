@@ -198,7 +198,7 @@ func IterateExpiredCertificate(backupName string, callback func(cert *x509.Certi
 	threshold := time.Now().Add(interval)
 	log.Printf("threshold %v", threshold)
 	return certs.Iterate(backupName, func(cert *x509.Certificate) error {
-		aboutToExpire := cert.NotAfter.After(threshold)
+		aboutToExpire := cert.NotAfter.Before(threshold)
 		log.Printf("cert.NotAfter %v", cert.NotAfter)
 		log.Printf("aboutToExpire %v", aboutToExpire)
 		log.Printf("Update required: %v, SerialNumber: %v, Issuer: %s, Subject: %s, Expire date: %v",
