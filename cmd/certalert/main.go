@@ -19,6 +19,7 @@ import (
 	"time"
 
 	syslog "github.com/RackSec/srslog"
+	"github.com/xoebus/ceflog"
 
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
@@ -201,15 +202,42 @@ func GetSyslog() (*syslog.Writer, error) {
 	return syslog.Dial(proto, address, priority, tag)
 }
 
+func GetCEFLogger() (*ceflog.Logger, error) {
+	logWriter, err := GetSyslog()
+	if err != nil {
+		return nil, err
+	}
+	if logWriter == nil {
+		return nil, nil
+	}
+	logger := ceflog.New(logWriter, "vendor", "product", "version")
+	return logger, nil
+}
+
 func ProcessBackup(backupName string) {
-	sysLog, err := GetSyslog()
+	/*sysLog, err := GetSyslog()
+	if err != nil {
+		log.Fatal(err)
+	}*/
+	logger, err := GetCEFLogger()
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	err = IterateExpiredCertificate(backupName, func(cert *x509.Certificate) error {
-		if sysLog != nil {
-			_, err := fmt.Fprintf(sysLog, "SerialNumber: %v, Issuer: %s, Subject: %s, Expire date: %v",
-				cert.SerialNumber, cert.Issuer, cert.Subject, cert.NotAfter)
+		if logger != nil {
+			logger.LogEvent(
+				"auth.new",
+				"Cert Alert",
+				ceflog.Sev(0),
+				ceflog.Ext("SerialNumber", cert.SerialNumber.String(),
+					"Issuer", cert.Issuer.String(),
+					"Subject", cert.Subject.String(),
+					"ExpireDate", cert.NotAfter.String()),
+			)
+
+			//			_, err := fmt.Fprintf(sysLog, "SerialNumber: %v, Issuer: %s, Subject: %s, Expire date: %v",
+			//				cert.SerialNumber, cert.Issuer, cert.Subject, cert.Subject)
 			if err != nil {
 				log.Print(err)
 			} else {
