@@ -194,9 +194,13 @@ func RunBackup(smsClient *sms.SMS, username, password, localIP, backupPath strin
 func IterateExpiredCertificate(backupName string, callback func(cert *x509.Certificate) error) error {
 	log.Print("Process backup")
 	interval := time.Duration(viper.GetInt(flagThresholdDays)) * time.Hour * 24
+	log.Printf("Interval %v", interval)
 	threshold := time.Now().Add(interval)
+	log.Printf("threshold %v", threshold)
 	return certs.Iterate(backupName, func(cert *x509.Certificate) error {
 		aboutToExpire := cert.NotAfter.After(threshold)
+		log.Printf("cert.NotAfter %v", cert.NotAfter)
+		log.Printf("aboutToExpire %v", aboutToExpire)
 		log.Printf("Update required: %v, SerialNumber: %v, Issuer: %s, Subject: %s, Expire date: %v",
 			aboutToExpire, cert.SerialNumber, cert.Issuer, cert.Subject, cert.NotAfter)
 		if aboutToExpire {
@@ -305,7 +309,7 @@ func SendMail(cert *x509.Certificate) error {
 	subject := fmt.Sprintf("CertAlert from %s", sms)
 
 	left := time.Until(cert.NotAfter) / (time.Hour * 24)
-	text := fmt.Sprintf("Subject: %s\r\n\r\nSMS: %s\r\nSerialNumber: %v\r\nIssuer: %s\r\nSubject: %s\r\nExpire date: %v\r\nDays left: %d",
+	text := fmt.Sprintf("Subject: %s\r\n\r\nSMS: %s\r\nFollowing certificate is about to be expired:\r\n\r\nSerialNumber: %v\r\nIssuer: %s\r\nSubject: %s\r\nExpire date: %v\r\nDays left: %d\r\n\r\n-- CertAlert",
 		subject, sms, cert.SerialNumber, cert.Issuer, cert.Subject, cert.NotAfter, left)
 
 	message := []byte(text)
