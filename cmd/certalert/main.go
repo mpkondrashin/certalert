@@ -278,7 +278,7 @@ func ProcessBackup(backupName string) {
 			log.Printf("%s is empty - skip sending syslog", flagSyslogHost)
 		}
 		if err := SendMail(cert); err != nil {
-			log.Print(err)
+			log.Printf("SendMail: %v", err)
 		} else {
 			log.Print("Email sent successfully!")
 		}
@@ -301,14 +301,16 @@ func SendMail(cert *x509.Certificate) error {
 	from := viper.GetString(flagSMTPFrom)
 	to := strings.Split(viper.GetString(flagSMTPTo), ",")
 
-	subject := "CertAlert"
-	text := fmt.Sprintf("Subject: %s\r\n\r\nSerialNumber: %v\r\nIssuer: %s\r\nSubject: %s\r\nExpire date: %v",
-		subject, cert.SerialNumber, cert.Issuer, cert.Subject, cert.NotAfter)
+	sms := viper.GetString(flagSMSAddress)
+	subject := fmt.Sprintf("CertAlert from %s", sms)
+	text := fmt.Sprintf("Subject: %s\r\n\r\nSMS: %s\r\nSerialNumber: %v\r\nIssuer: %s\r\nSubject: %s\r\nExpire date: %v",
+		subject, sms, cert.SerialNumber, cert.Issuer, cert.Subject, cert.NotAfter)
 
 	message := []byte(text)
-
-	auth := smtp.PlainAuth("", from, password, host)
-
+	var auth smtp.Auth
+	if password != "" {
+		auth = smtp.PlainAuth("", from, password, host)
+	}
 	address := fmt.Sprintf("%s:%d", host, port)
 	return smtp.SendMail(address, auth, from, to, message)
 }
@@ -347,12 +349,6 @@ func main() {
 	}
 	localIP := GetLocalAddress()
 	log.Print("Generate private key")
-	/*
-		privateKey, err := rsa.Private()
-		if err != nil {
-			log.Fatal(err)
-		}
-	*/
 	port := 22
 	log.Printf("Run local sFTP server")
 	username := RandStringBytesRmndr(viper.GetInt(flagSFTPUsernameLength))
@@ -369,7 +365,7 @@ func main() {
 	backupPath := filepath.Join(tempDir, backupName)
 	defer func(backupName string) {
 		log.Print("Remove temporary folder")
-		//_ = os.RemoveAll(tempDir)
+		_ = os.RemoveAll(tempDir)
 	}(backupName)
 	<-ready
 	log.Print("sFTP is ready")
