@@ -6,7 +6,7 @@
 ## How to use:
 1. Create API Key
 2. Write config file
-3. Run CertAlert
+3. Download and run CertAlert
 
 ### API Key
 1. Open Tipping Point SMS
@@ -32,6 +32,8 @@ syslog:
 If email or syslog alert is not needed, just delete appropriate section.
 
 ### Run CertAlert
+
+Download certalert executable for your platfrom from  [releases](https://github.com/mpkondrashin/certalert/releases/latest)
 
 Run following command (for Windows):
 ```commandline
