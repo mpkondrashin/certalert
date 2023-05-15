@@ -214,7 +214,7 @@ func GetSyslog() (*syslog.Writer, error) {
 	proto := viper.GetString(flagSyslogProto)
 	address := fmt.Sprintf("%s:%d", host, port)
 	tag := viper.GetString(flagSyslogTag)
-	priority := syslog.LOG_WARNING | syslog.LOG_DAEMON
+	priority := syslog.Priority(viper.GetInt(flagSyslogSeverity))
 	return syslog.Dial(proto, address, priority, tag)
 }
 
@@ -242,10 +242,8 @@ func ProcessBackup(backupName string) {
 	if err != nil {
 		log.Fatal(err)
 	}
-
 	err = IterateExpiredCertificate(backupName, func(cert *x509.Certificate) error {
 		if logger != nil {
-
 			logger.LogEvent(
 				viper.GetString(flagSyslogSignature),
 				viper.GetString(flagSyslogName),
@@ -255,14 +253,7 @@ func ProcessBackup(backupName string) {
 					"Subject", cert.Subject.String(),
 					"ExpireDate", cert.NotAfter.String()),
 			)
-
-			//			_, err := fmt.Fprintf(sysLog, "SerialNumber: %v, Issuer: %s, Subject: %s, Expire date: %v",
-			//				cert.SerialNumber, cert.Issuer, cert.Subject, cert.Subject)
-			if err != nil {
-				log.Print(err)
-			} else {
-				log.Print("Syslog sent successfully!")
-			}
+			log.Print("Syslog sent successfully!")
 		} else {
 			log.Printf("%s is empty - skip sending syslog", flagSyslogHost)
 		}
