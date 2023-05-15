@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
-	"log/syslog"
 	"math/rand"
 	"net"
 	"net/smtp"
@@ -19,13 +18,19 @@ import (
 	"strings"
 	"time"
 
+	syslog "github.com/RackSec/srslog"
+
+	"github.com/spf13/pflag"
+	"github.com/spf13/viper"
+
 	"github.com/mpkondrashin/certalert/pkg/certs"
 	"github.com/mpkondrashin/certalert/pkg/secureftp"
 	"github.com/mpkondrashin/certalert/pkg/sms"
-	"github.com/spf13/pflag"
-	"github.com/spf13/viper"
 )
 
+// 10:40
+// ganem ashraf
+// 800
 const (
 	DefaultUsernameLength = 16
 	DefaultPasswordLength = 16
