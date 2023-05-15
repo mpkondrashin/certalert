@@ -82,3 +82,11 @@ To set these parameters through environment variable, example for API Key:
 ```commandline
 CERTALERT_SMS.API_KEY=A95BE8AB-AE11-45C5-B813-A9A2FDC27E5B certalert
 ```
+
+## BUGS
+
+### On Windows - only C: drive!
+On Windows, system TEMP folder should be on C: drive and program should run also from C:.
+
+### Bidirectional connectivity
+Must be available bidirectional connectivity from host running CertAlert to SMS and back!
