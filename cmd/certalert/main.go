@@ -194,13 +194,9 @@ func RunBackup(smsClient *sms.SMS, username, password, localIP, backupPath strin
 func IterateExpiredCertificate(backupName string, callback func(cert *x509.Certificate) error) error {
 	log.Print("Process backup")
 	interval := time.Duration(viper.GetInt(flagThresholdDays)) * time.Hour * 24
-	log.Printf("Interval %v", interval)
 	threshold := time.Now().Add(interval)
-	log.Printf("threshold %v", threshold)
 	return certs.Iterate(backupName, func(cert *x509.Certificate) error {
 		aboutToExpire := cert.NotAfter.Before(threshold)
-		log.Printf("cert.NotAfter %v", cert.NotAfter)
-		log.Printf("aboutToExpire %v", aboutToExpire)
 		log.Printf("Update required: %v, SerialNumber: %v, Issuer: %s, Subject: %s, Expire date: %v",
 			aboutToExpire, cert.SerialNumber, cert.Issuer, cert.Subject, cert.NotAfter)
 		if aboutToExpire {
@@ -246,11 +242,8 @@ func GetSyslog() (*syslog.Writer, error) {
 
 func GetCEFLogger() (*ceflog.Logger, error) {
 	logWriter, err := GetSyslog()
-	if err != nil {
-		return nil, err
-	}
 	if logWriter == nil {
-		return nil, nil
+		return nil, err
 	}
 	vendor := viper.GetString(flagSyslogVendor)
 	product := viper.GetString(flagSyslogProduct)
