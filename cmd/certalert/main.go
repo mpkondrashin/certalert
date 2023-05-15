@@ -303,8 +303,10 @@ func SendMail(cert *x509.Certificate) error {
 
 	sms := viper.GetString(flagSMSAddress)
 	subject := fmt.Sprintf("CertAlert from %s", sms)
-	text := fmt.Sprintf("Subject: %s\r\n\r\nSMS: %s\r\nSerialNumber: %v\r\nIssuer: %s\r\nSubject: %s\r\nExpire date: %v",
-		subject, sms, cert.SerialNumber, cert.Issuer, cert.Subject, cert.NotAfter)
+
+	left := time.Until(cert.NotAfter) / (time.Hour * 24)
+	text := fmt.Sprintf("Subject: %s\r\n\r\nSMS: %s\r\nSerialNumber: %v\r\nIssuer: %s\r\nSubject: %s\r\nExpire date: %v\r\nDays left: %d",
+		subject, sms, cert.SerialNumber, cert.Issuer, cert.Subject, cert.NotAfter, left)
 
 	message := []byte(text)
 	var auth smtp.Auth
