@@ -61,6 +61,9 @@ const (
 	flagSyslogHost      = "syslog.host"
 	flagSyslogPort      = "syslog.port"
 	flagSyslogTag       = "syslog.tag"
+	flagSyslogVendor    = "syslog.vendor"
+	flagSyslogProduct   = "syslog.product"
+	flagSyslogVersion   = "syslog.version"
 	flagSyslogSignature = "syslog.signature"
 	flagSyslogName      = "syslog.name"
 	flagSyslogSeverity  = "syslog.severity"
@@ -87,6 +90,9 @@ func Configure() {
 	fs.String(flagSyslogHost, "", "Syslog host")
 	fs.Int(flagSyslogPort, 514, "Syslog port")
 	fs.String(flagSyslogTag, "certalert", "Syslog tag")
+	fs.String(flagSyslogVendor, "Trend Micro", "CEF Vendor field value")
+	fs.String(flagSyslogProduct, "Tipping Point SMS", "CEF Product field value")
+	fs.String(flagSyslogVersion, "0", "CEF Version field value")
 	fs.String(flagSyslogSignature, "cert", "CEF Signature ID field value")
 	fs.String(flagSyslogName, "Certificate Update Required", "CEF Name field value")
 	fs.Int(flagSyslogSeverity, 5, "CEF Severity field value (0 - Emergency, 7 - Debug. Defatlt 5 - Warning)")
@@ -220,7 +226,10 @@ func GetCEFLogger() (*ceflog.Logger, error) {
 	if logWriter == nil {
 		return nil, nil
 	}
-	logger := ceflog.New(logWriter, "vendor", "product", "version")
+	vendor := viper.GetString(flagSyslogVendor)
+	product := viper.GetString(flagSyslogProduct)
+	version := viper.GetString(flagSyslogVersion)
+	logger := ceflog.New(logWriter, vendor, product, version)
 	return logger, nil
 }
 
