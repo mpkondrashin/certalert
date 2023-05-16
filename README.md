@@ -53,7 +53,7 @@ CertAlert provides following ways to provide options:
 
 Full config file explained:
 ```yaml
-days: 14 # This is defaule value
+days: 14 # This is the defaule value
 temp: # Temporary folder to use for SMS backup file. If empty, it is assumed to be system temporary folder
 sms:
   address: # IP address or dns name
@@ -68,7 +68,7 @@ smtp:
 syslog:
   host: # IP address or dns name
   proto: udp # or tcp. udp - default
-  port: 514 # this is default value
+  port: 514 # this is the default value
   severity: 4 # Warning
   facility: 0 # LOCAL0
 ```
@@ -85,8 +85,8 @@ CERTALERT_SMS.API_KEY=A95BE8AB-AE11-45C5-B813-A9A2FDC27E5B certalert
 
 ## BUGS
 
-### On Windows - only C: drive!
-On Windows, system TEMP folder should be on C: drive and program should run also from C:.
+### On Windows - %TEMP% and certalert.exe on same drive!
+On Windows, system TEMP folder should be on same drive and certalert.exe program (actually as current folder). If it is not so, "temp" parameter of configuration can be used, e.g. "temp: D:\TEMP" in config.yaml
 
 ### Bidirectional connectivity
 Must be available bidirectional connectivity from host running CertAlert to SMS and back!
