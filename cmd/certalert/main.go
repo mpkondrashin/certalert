@@ -1,6 +1,3 @@
-// An example SFTP server implementation using the golang SSH package.
-// Serves the whole filesystem visible to the user, and has a hard-coded username and password,
-// so not for real use!
 package main
 
 import (
@@ -29,9 +26,6 @@ import (
 	"github.com/mpkondrashin/certalert/pkg/sms"
 )
 
-// 10:40
-// ganem ashraf
-// 800
 const (
 	DefaultUsernameLength = 16
 	DefaultPasswordLength = 16
@@ -169,8 +163,13 @@ func FilterBackupPath(backupPath string) string {
 	if runtime.GOOS != "windows" {
 		return backupPath
 	}
-	if !strings.HasPrefix(backupPath, "C:") {
-		log.Fatalf("TEMP is not on C: drive: %s", backupPath)
+	path, err := os.Getwd()
+	if err != nil {
+		log.Fatal(err)
+	}
+	currentDrive := path[:2]
+	if !strings.HasPrefix(backupPath, currentDrive) {
+		log.Fatalf("TEMP is on %s drive and not on current drive: %s", backupPath[:2], currentDrive)
 	}
 	backupPath = backupPath[2:]
 	return strings.ReplaceAll(backupPath, "\\", "/")
@@ -180,7 +179,6 @@ func RunBackup(smsClient *sms.SMS, username, password, localIP, backupPath strin
 	backupPath = FilterBackupPath(backupPath)
 	log.Printf("RunBackup(%v, %s, %s, %s, %s)", smsClient, username, password, localIP, backupPath)
 	location := fmt.Sprintf("%s:%s", localIP, backupPath)
-	//	location := fmt.Sprintf("%s:2022/%s", localIP, backupName)
 	password = url.QueryEscape(password)
 	options := sms.NewBackupDatabaseOptionsSFTP(location, username, password)
 	options.SetSSLPrivateKeys(true).SetTimestamp(false)
@@ -347,14 +345,17 @@ func main() {
 		}
 	}
 	localIP := GetLocalAddress()
-	log.Print("Generate private key")
-	port := 22
 	log.Printf("Run local sFTP server")
+	port := 22
 	username := RandStringBytesRmndr(viper.GetInt(flagSFTPUsernameLength))
 	password := RandStringBytesRmndr(viper.GetInt(flagSFTPPasswordLength))
-	tempDir, err := ioutil.TempDir(viper.GetString(flagTempDir), "ca-*")
-	if err != nil {
-		log.Fatalf("TempDir: %v", err)
+	tempDir := viper.GetString(flagTempDir)
+	if tempDir == "" {
+		var err error
+		tempDir, err = ioutil.TempDir(viper.GetString(flagTempDir), "ca-*")
+		if err != nil {
+			log.Fatalf("TempDir: %v", err)
+		}
 	}
 	log.Printf("Temp folder: %s", tempDir)
 	ready := make(chan struct{})
