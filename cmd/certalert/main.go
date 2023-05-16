@@ -177,12 +177,12 @@ func FilterBackupPath(backupPath string) string {
 
 func RunBackup(smsClient *sms.SMS, username, password, localIP, backupPath string) {
 	backupPath = FilterBackupPath(backupPath)
-	log.Printf("RunBackup(%v, %s, %s, %s, %s)", smsClient, username, password, localIP, backupPath)
+	//log.Printf("RunBackup(%v, %s, %s, %s, %s)", smsClient, username, password, localIP, backupPath)
 	location := fmt.Sprintf("%s:%s", localIP, backupPath)
 	password = url.QueryEscape(password)
 	options := sms.NewBackupDatabaseOptionsSFTP(location, username, password)
 	options.SetSSLPrivateKeys(true).SetTimestamp(false)
-	log.Print("Initiate backup")
+	log.Printf("Initiate backup: %v -> %s", smsClient, localIP)
 	err := smsClient.BackupDatabase(options)
 	if err != nil {
 		log.Fatalf("Backup database: %v", err)

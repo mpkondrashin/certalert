@@ -37,6 +37,11 @@ func New(url string, auth Authorization) *SMS {
 	}
 }
 
+// String - return SMS string representation
+func (s *SMS) String() string {
+	return fmt.Sprintf("[SMS %s]", s.url)
+}
+
 // SetUserAgent - set user agent instead default one
 func (s *SMS) SetUserAgent(userAgent string) *SMS {
 	s.userAgent = userAgent
