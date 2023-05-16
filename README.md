@@ -1,21 +1,21 @@
 
-# CertAlert Update Your SSL Certificates On Time!
+# CertAlert — Update TLS Certificates In Your Tipping Point SMS On Time!
 
-**CertAlert provide ability to receive alerts on all certificates in Tipping Point SMS that are about to expire**
+**CertAlert alerts on certificates in Tipping Point SMS that are about to expire**
 
 ## How to use:
 1. Create API Key
 2. Write config file
-3. Download and run CertAlert
+3. Download and run CertAlert executable
 
-### API Key
+### Create API Key
 1. Open Tipping Point SMS
 2. Go to Admin -> Authentication and Authorization -> Users
-3. Create New user and add it into auperuser group
+3. Create New user and add it into superuser group
 4. Save API Key
 
 ### Write config file
-Create following minimal configuration file
+Create following minimal configuration file:
 ```yaml
 days: 14
 sms:
@@ -86,7 +86,7 @@ CERTALERT_SMS.API_KEY=A95BE8AB-AE11-45C5-B813-A9A2FDC27E5B certalert
 ## BUGS
 
 ### On Windows - %TEMP% and certalert.exe on same drive!
-On Windows, system TEMP folder should be on same drive and certalert.exe program (actually as current folder). If it is not so, "temp" parameter of configuration can be used, e.g. "temp: D:\TEMP" in config.yaml
+On Windows, system TEMP folder should be on same drive and certalert.exe program (actually as current folder). If it is not so, "temp" parameter of configuration can be used, e.g. "temp: D:\TEMP" in config.yaml or TMP environment variable can be set.
 
 ### Bidirectional connectivity
 Must be available bidirectional connectivity from host running CertAlert to SMS and back!

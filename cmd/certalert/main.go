@@ -358,8 +358,7 @@ func main() {
 		}
 	}
 	log.Printf("Temp folder: %s", tempDir)
-	ready := make(chan struct{})
-	go secureftp.Run(username, password, localIP, port, ready)
+	go secureftp.Run(username, password, localIP, port)
 	smsClient := GetSMS()
 	backupName := GetBackupFileName()
 	backupPath := filepath.Join(tempDir, backupName)
@@ -367,13 +366,11 @@ func main() {
 		log.Print("Remove temporary folder")
 		_ = os.RemoveAll(tempDir)
 	}(backupName)
-	<-ready
-	log.Print("sFTP is ready")
 	RunBackup(smsClient, username, password, localIP, backupPath)
 	info, err := os.Stat(backupPath)
 	if err != nil {
 		log.Fatalf("Stat: %v", err)
 	}
-	log.Printf("Got backup file: %d byes", info.Size())
+	log.Printf("Got backup file: %s", formatFileSize(info.Size()))
 	ProcessBackup(backupPath)
 }

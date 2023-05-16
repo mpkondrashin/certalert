@@ -20,7 +20,7 @@ func getPasswordHandler(password string) func(ssh.Context, string) bool {
 	})
 }
 
-func Run(user, password string, ip string, port int, ready chan struct{}) {
+func Run(user, password string, ip string, port int) {
 	server := ssh.Server{
 		Addr:            fmt.Sprintf("%s:%d", ip, port),
 		PasswordHandler: ssh.PasswordHandler(getPasswordHandler(password)),
@@ -48,8 +48,7 @@ func Run(user, password string, ip string, port int, ready chan struct{}) {
 			},
 		},
 	}
-	logger.Printf("sFTP: Listening os %d", port)
-	ready <- struct{}{}
+	logger.Printf("sFTP: Listening on %d", port)
 	err := server.ListenAndServe()
 	if err != nil {
 		logger.Printf("sFTP: Failed to start the SSH server: %s", err)
