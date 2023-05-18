@@ -335,6 +335,27 @@ func RandStringBytesRmndr(n int) string {
 	return string(b)
 }
 
+func GetTempDir() string {
+	tempDir := viper.GetString(flagTempDir)
+	if tempDir == "" {
+		var err error
+		tempDir, err = ioutil.TempDir(viper.GetString(flagTempDir), "ca-*")
+		if err != nil {
+			log.Fatalf("TempDir: %v", err)
+		}
+	}
+	log.Printf("Temp folder: %s", tempDir)
+	return tempDir
+}
+
+func LogSize(backupPath string) {
+	info, err := os.Stat(backupPath)
+	if err != nil {
+		log.Fatalf("Stat: %v", err)
+	}
+	log.Printf("Got backup file: %s", formatFileSize(info.Size()))
+}
+
 func main() {
 	Configure()
 	if len(os.Args) == 2 {
@@ -349,28 +370,16 @@ func main() {
 	port := 22
 	username := RandStringBytesRmndr(viper.GetInt(flagSFTPUsernameLength))
 	password := RandStringBytesRmndr(viper.GetInt(flagSFTPPasswordLength))
-	tempDir := viper.GetString(flagTempDir)
-	if tempDir == "" {
-		var err error
-		tempDir, err = ioutil.TempDir(viper.GetString(flagTempDir), "ca-*")
-		if err != nil {
-			log.Fatalf("TempDir: %v", err)
-		}
-	}
-	log.Printf("Temp folder: %s", tempDir)
 	go secureftp.Run(username, password, localIP, port)
 	smsClient := GetSMS()
 	backupName := GetBackupFileName()
+	tempDir := GetTempDir()
 	backupPath := filepath.Join(tempDir, backupName)
 	defer func(backupName string) {
 		log.Print("Remove temporary folder")
 		_ = os.RemoveAll(tempDir)
 	}(backupName)
 	RunBackup(smsClient, username, password, localIP, backupPath)
-	info, err := os.Stat(backupPath)
-	if err != nil {
-		log.Fatalf("Stat: %v", err)
-	}
-	log.Printf("Got backup file: %s", formatFileSize(info.Size()))
+	LogSize(backupPath)
 	ProcessBackup(backupPath)
 }
