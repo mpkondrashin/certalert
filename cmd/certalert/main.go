@@ -43,6 +43,7 @@ const (
 const (
 	flagTempDir       = "temp"
 	flagThresholdDays = "days"
+	flagIgnoreExpired = "ignore_expired"
 
 	flagSMSAddress         = "sms.address"
 	flagSMSAPIKey          = "sms.api_key"
@@ -74,13 +75,16 @@ const (
 func Configure() {
 	fs := pflag.NewFlagSet("", pflag.ExitOnError)
 
+	fs.Int(flagThresholdDays, 14, "Alert on certificates to be expired within provided number of days")
+	fs.String(flagTempDir, "", "Folder for temporary files")
+	fs.Bool(flagIgnoreExpired, false, "Alert only on about to expire certificates, ignoring already expired")
+
 	fs.String(flagSMSAddress, "", "Tipping Point SMS address")
 	fs.String(flagSMSAPIKey, "", "Tipping Point SMS API Key")
 	fs.Bool(flagSMSIgnoreTLSErrors, false, "Ignore SMS TLS errors")
 
 	fs.Int(flagSFTPUsernameLength, DefaultUsernameLength, "sFTP username length")
 	fs.Int(flagSFTPPasswordLength, DefaultPasswordLength, "sFTP password length")
-	fs.Int(flagThresholdDays, 14, "Alert on certificates to be expired within provided number of days")
 
 	fs.String(flagSyslogProto, "udp", "Syslog protocol (udp/tcp)")
 	fs.String(flagSyslogHost, "", "Syslog host")
@@ -193,18 +197,24 @@ func RunBackup(smsClient *sms.SMS, username, password, localIP, backupPath strin
 
 func IterateExpiredCertificate(backupName string, callback func(cert *x509.Certificate) error) error {
 	log.Print("Process backup")
-	interval := time.Duration(viper.GetInt(flagThresholdDays)) * time.Hour * 24
-	threshold := time.Now().Add(interval)
+	thresholdDays := viper.GetInt(flagThresholdDays)
+	interval := time.Duration(thresholdDays) * time.Hour * 24
+	now := time.Now()
+	threshold := now.Add(interval)
+	ignoreExpired := viper.GetBool(flagIgnoreExpired)
 	return certs.Iterate(backupName, func(cert *x509.Certificate) error {
 		aboutToExpire := cert.NotAfter.Before(threshold)
-		log.Printf("Update required: %v, SerialNumber: %v, Issuer: %s, Subject: %s, Expire date: %v",
-			aboutToExpire, cert.SerialNumber, cert.Issuer, cert.Subject, cert.NotAfter)
+		expired := cert.NotAfter.Before(now)
+		log.Printf("To expire within %d days: %v, expired: %v, SerialNumber: %v, Issuer: %s, Subject: %s, Expire date: %v",
+			thresholdDays, aboutToExpire, expired, cert.SerialNumber, cert.Issuer, cert.Subject, cert.NotAfter)
+		if expired && ignoreExpired {
+			return nil
+		}
 		if aboutToExpire {
 			return callback(cert)
 		}
 		return nil
 	})
-
 }
 
 func GetFacility(facility int) syslog.Priority {

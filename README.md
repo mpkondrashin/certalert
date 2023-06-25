@@ -55,6 +55,7 @@ Full config file explained:
 ```yaml
 days: 14 # This is the defaule value
 temp: # Temporary folder to use for SMS backup file. If empty, it is assumed to be system temporary folder
+ignore_expired: # Alert only on about to expire certificates, ignoring already expired. Default value: false
 sms:
   address: # IP address or dns name
   api_key: # SMS API Key
