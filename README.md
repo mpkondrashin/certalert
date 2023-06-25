@@ -65,6 +65,7 @@ smtp:
   from: # email of alert sender
   to: # email of alert recipient
   password: # SMTP auth password
+  subject: # Subject prefix
 syslog:
   host: # IP address or dns name
   proto: udp # or tcp. udp - default

@@ -68,6 +68,7 @@ const (
 	flagSMTPPassword = "smtp.password"
 	flagSMTPHost     = "smtp.host"
 	flagSMTPPort     = "smtp.port"
+	flagSMTPSubject  = "smtp.subject"
 )
 
 func Configure() {
@@ -97,6 +98,7 @@ func Configure() {
 	fs.String(flagSMTPTo, "", "SMTP email to send alerts")
 	fs.Int(flagSMTPPort, 25, "SMTP port")
 	fs.String(flagSMTPHost, "", "SMTP server address")
+	fs.String(flagSMTPSubject, "", "alert mail subject prefix")
 
 	err := fs.Parse(os.Args[1:])
 	if err != nil {
@@ -298,7 +300,10 @@ func SendMail(cert *x509.Certificate) error {
 
 	sms := viper.GetString(flagSMSAddress)
 	subject := fmt.Sprintf("CertAlert from %s", sms)
-
+	prefix := viper.GetString(flagSMTPSubject)
+	if prefix != "" {
+		subject = fmt.Sprintf("%s: %s", prefix, subject)
+	}
 	left := time.Until(cert.NotAfter) / (time.Hour * 24)
 	text := fmt.Sprintf("Subject: %s\r\n\r\nSMS: %s\r\nFollowing certificate is about to be expired:\r\n\r\nSerialNumber: %v\r\nIssuer: %s\r\nSubject: %s\r\nExpire date: %v\r\nDays left: %d\r\n\r\n-- CertAlert",
 		subject, sms, cert.SerialNumber, cert.Issuer, cert.Subject, cert.NotAfter, left)
