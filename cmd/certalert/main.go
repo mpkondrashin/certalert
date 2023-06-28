@@ -12,6 +12,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 	"time"
 
@@ -44,6 +45,7 @@ const (
 	flagTempDir       = "temp"
 	flagThresholdDays = "days"
 	flagIgnoreExpired = "ignore_expired"
+	flagOnDays        = "on_days"
 
 	flagSMSAddress         = "sms.address"
 	flagSMSAPIKey          = "sms.api_key"
@@ -75,7 +77,8 @@ const (
 func Configure() {
 	fs := pflag.NewFlagSet("", pflag.ExitOnError)
 
-	fs.Int(flagThresholdDays, 14, "Alert on certificates to be expired within provided number of days")
+	fs.Int(flagThresholdDays, 0, "Alert on certificates to be expired within provided number of days")
+	fs.String(flagOnDays, "", "Alert on certificates expiring on that precise date from today")
 	fs.String(flagTempDir, "", "Folder for temporary files")
 	fs.Bool(flagIgnoreExpired, false, "Alert only on about to expire certificates, ignoring already expired")
 
@@ -135,11 +138,38 @@ func Configure() {
 	if viper.GetString(flagSMSAPIKey) == "" {
 		log.Fatalf("Missing %s", flagSMSAPIKey)
 	}
-	switch viper.GetString(flagSyslogProto) {
+	proto := viper.GetString(flagSyslogProto)
+	switch proto {
 	case "tcp", "udp":
 	default:
-		log.Fatalf("%s: syslog protocol is not udp or tcp")
+		log.Fatalf("%s: syslog protocol is not udp or tcp", proto)
 	}
+	if viper.GetInt(flagThresholdDays) != 0 && viper.GetString(flagOnDays) != "" {
+		log.Fatalf("Only one from %s and %s can be set", flagOnDays, flagThresholdDays)
+	}
+	if viper.GetInt(flagOnDays) == 0 && viper.GetString(flagOnDays) == "" {
+		log.Fatalf("%s or %s should be set", flagOnDays, flagThresholdDays)
+	}
+	_, err = OnDay()
+	if err != nil {
+		log.Fatalf("%s: %v", flagOnDays, err)
+	}
+}
+
+func OnDay() (result []uint64, err error) {
+	onDays := viper.GetString(flagOnDays)
+	if onDays == "" {
+		return nil, nil
+	}
+	onDaysList := strings.Split(onDays, ",")
+	for _, each := range onDaysList {
+		v, err := strconv.ParseUint(each, 10, 64)
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, v)
+	}
+	return
 }
 
 func GetSMS() *sms.SMS {
@@ -195,25 +225,13 @@ func RunBackup(smsClient *sms.SMS, username, password, localIP, backupPath strin
 	}
 }
 
-func IterateExpiredCertificate(backupName string, callback func(cert *x509.Certificate) error) error {
+func IterateExpiredCertificate(backupName string, alertRequired AlertRequiredFunc, callback func(cert *x509.Certificate) error) error {
 	log.Print("Process backup")
-	thresholdDays := viper.GetInt(flagThresholdDays)
-	interval := time.Duration(thresholdDays) * time.Hour * 24
-	now := time.Now()
-	threshold := now.Add(interval)
-	ignoreExpired := viper.GetBool(flagIgnoreExpired)
 	return certs.Iterate(backupName, func(cert *x509.Certificate) error {
-		aboutToExpire := cert.NotAfter.Before(threshold)
-		expired := cert.NotAfter.Before(now)
-		log.Printf("To expire within %d days: %v; expired: %v; SerialNumber: %v; Issuer: %s; Subject: %s; Expire date: %v",
-			thresholdDays, aboutToExpire, expired, cert.SerialNumber, cert.Issuer, cert.Subject, cert.NotAfter)
-		if expired && ignoreExpired {
-			return nil
+		if alertRequired(cert) {
+			return callback(cert)
 		}
-		if !aboutToExpire {
-			return nil
-		}
-		return callback(cert)
+		return nil
 	})
 }
 
@@ -262,12 +280,72 @@ func GetCEFLogger() (*ceflog.Logger, error) {
 	return logger, nil
 }
 
+type AlertRequiredFunc func(cert *x509.Certificate) bool
+
+func GetAlertRequiredFunc() AlertRequiredFunc {
+	if viper.GetInt(flagThresholdDays) != 0 {
+		return GetDaysAlertRequiredFunc()
+	}
+	if viper.GetString(flagOnDays) != "" {
+		return GetOnDayAlertRequiredFunc()
+	}
+	log.Fatalf("Both %s and %s are set", flagThresholdDays, flagOnDays)
+	return nil
+}
+
+func GetDaysAlertRequiredFunc() AlertRequiredFunc {
+	thresholdDays := viper.GetInt(flagThresholdDays)
+	interval := time.Duration(thresholdDays) * time.Hour * 24
+	now := time.Now().Round(time.Hour * 24)
+	threshold := now.Add(interval)
+	ignoreExpired := viper.GetBool(flagIgnoreExpired)
+	return func(cert *x509.Certificate) bool {
+		aboutToExpire := cert.NotAfter.Before(threshold)
+		expired := cert.NotAfter.Before(now)
+		log.Printf("To expire within %d days: %v; expired: %v; SerialNumber: %v; Issuer: %s; Subject: %s; Expire date: %v",
+			thresholdDays, aboutToExpire, expired, cert.SerialNumber, cert.Issuer, cert.Subject, cert.NotAfter)
+		if expired && ignoreExpired {
+			return false
+		}
+		return aboutToExpire
+	}
+}
+
+func GetOnDayAlertRequiredFunc() AlertRequiredFunc {
+	today := time.Now().Round(time.Hour * 24)
+	type Interval struct {
+		from time.Time
+		to   time.Time
+	}
+	var intervals []Interval
+	daysList, _ := OnDay()
+	for _, days := range daysList {
+		f := today.Add(time.Duration(days) * time.Hour * 24)
+		t := today.Add(time.Duration(days+1) * time.Hour * 24)
+		intervals = append(intervals, Interval{f, t})
+	}
+	return func(cert *x509.Certificate) bool {
+		for _, interval := range intervals {
+			beforeFrom := cert.NotAfter.Before(interval.from)
+			afterTo := cert.NotAfter.After(interval.to)
+			alert := !beforeFrom && !afterTo
+			log.Printf("Today: %v; Expire before %v: %v; Expire after %v: %v; Send alert: %v; SerialNumber: %v; Issuer: %s; Subject: %s; Expire date: %v",
+				today, interval.from, beforeFrom, interval.to, afterTo, alert, cert.SerialNumber, cert.Issuer, cert.Subject, cert.NotAfter)
+			if alert {
+				return alert
+			}
+		}
+		return false
+	}
+}
+
 func ProcessBackup(backupName string) {
 	logger, err := GetCEFLogger()
 	if err != nil {
 		log.Fatal(err)
 	}
-	err = IterateExpiredCertificate(backupName, func(cert *x509.Certificate) error {
+
+	err = IterateExpiredCertificate(backupName, GetAlertRequiredFunc(), func(cert *x509.Certificate) error {
 		if logger != nil {
 			logger.LogEvent(
 				viper.GetString(flagSyslogSignature),
@@ -282,7 +360,7 @@ func ProcessBackup(backupName string) {
 			)
 			log.Print("Syslog sent successfully!")
 		} else {
-			log.Printf("%s is empty - skip sending syslog", flagSyslogHost)
+			log.Printf("Syslog: %s is empty - skip sending syslog", flagSyslogHost)
 		}
 		if err := SendMail(cert); err != nil {
 			log.Printf("SendMail: %v", err)

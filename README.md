@@ -54,8 +54,10 @@ CertAlert provides following ways to provide options:
 Full config file explained:
 ```yaml
 days: 14 # This is the defaule value
-temp: # Temporary folder to use for SMS backup file. If empty, it is assumed to be system temporary folder
 ignore_expired: # Alert only on about to expire certificates, ignoring already expired. Default value: false
+# on_days: 14,30 - comma separated list of days from today to alert on certificates expiering on these dates.
+# This option can not be used togather with "days"
+temp: # Temporary folder to use for SMS backup file. If empty, it is assumed to be system temporary folder
 sms:
   address: # IP address or dns name
   api_key: # SMS API Key
