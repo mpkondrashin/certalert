@@ -329,8 +329,9 @@ func GetOnDayAlertRequiredFunc() AlertRequiredFunc {
 			beforeFrom := cert.NotAfter.Before(interval.from)
 			afterTo := cert.NotAfter.After(interval.to)
 			alert := !beforeFrom && !afterTo
-			log.Printf("Today: %v; Expire before %v: %v; Expire after %v: %v; Send alert: %v; SerialNumber: %v; Issuer: %s; Subject: %s; Expire date: %v",
-				today, interval.from, beforeFrom, interval.to, afterTo, alert, cert.SerialNumber, cert.Issuer, cert.Subject, cert.NotAfter)
+			log.Printf("Today: %v; Expire before %v: %v; Expire after %v: %v; Send alert: %v; SerialNumber: %v; Issuer: %s; Subject: %s; Expire date: %v (Not before: %v)",
+				today, interval.from, beforeFrom, interval.to, afterTo, alert, cert.SerialNumber, cert.Issuer, cert.Subject,
+				cert.NotAfter, cert.NotBefore)
 			if alert {
 				return alert
 			}
