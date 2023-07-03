@@ -44,6 +44,10 @@ for Linux:
 ./certalert
 ```
 
+For production use, certalert should be launched regularly using operating system scheduled run possibility (Windows Task Scheduler/crontab). In this case two options are available:
+1. Run certalert once a week (days: 7) or once in two weeks (days: 14) and alert on all certificates about to expire within this peroid of time. For this "days" options should be used.
+1. Run certalert daily and alert of certificates to expire on particular day or days in the future. Options on_days designed for this.
+
 ## Options
 
 CertAlert provides following ways to provide options:
