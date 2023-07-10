@@ -1,8 +1,10 @@
 package main
 
 import (
+	"crypto/sha1"
 	"crypto/x509"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"math/rand"
@@ -72,6 +74,9 @@ const (
 	flagSMTPHost     = "smtp.host"
 	flagSMTPPort     = "smtp.port"
 	flagSMTPSubject  = "smtp.subject"
+
+	flagLogFileName  = "log.filename"
+	flagLogAnonymize = "log.anonymize"
 )
 
 func Configure() {
@@ -106,6 +111,9 @@ func Configure() {
 	fs.Int(flagSMTPPort, 25, "SMTP port")
 	fs.String(flagSMTPHost, "", "SMTP server address")
 	fs.String(flagSMTPSubject, "", "alert mail subject prefix")
+
+	fs.String(flagLogFileName, "", "Filename for log file")
+	fs.Bool(flagLogAnonymize, false, "Anonymize log file content")
 
 	err := fs.Parse(os.Args[1:])
 	if err != nil {
@@ -147,13 +155,40 @@ func Configure() {
 	if viper.GetInt(flagThresholdDays) != 0 && viper.GetString(flagOnDays) != "" {
 		log.Fatalf("Only one from %s and %s can be set", flagOnDays, flagThresholdDays)
 	}
-	if viper.GetInt(flagOnDays) == 0 && viper.GetString(flagOnDays) == "" {
+	if viper.GetInt(flagThresholdDays) == 0 && viper.GetString(flagOnDays) == "" {
 		log.Fatalf("%s or %s should be set", flagOnDays, flagThresholdDays)
 	}
 	_, err = OnDay()
 	if err != nil {
 		log.Fatalf("%s: %v", flagOnDays, err)
 	}
+}
+
+func ConfigureLogging() {
+	logFileName := viper.GetString(flagLogFileName)
+	if logFileName == "" {
+		return
+	}
+	logFile, err := os.OpenFile(logFileName, os.O_CREATE|os.O_APPEND|os.O_RDWR, 0644)
+	if err != nil {
+		log.Fatal(err)
+	}
+	mw := io.MultiWriter(os.Stderr, logFile)
+	log.SetOutput(mw)
+}
+
+func hide(v any) string {
+	s := fmt.Sprintf("%v", v)
+	hasher := sha1.New()
+	hasher.Write([]byte(s))
+	return fmt.Sprintf("%x", hasher.Sum(nil))
+}
+
+func Hide(v any) string {
+	if !viper.GetBool(flagLogAnonymize) {
+		return fmt.Sprintf("%v", v)
+	}
+	return hide(v)
 }
 
 func OnDay() (result []uint64, err error) {
@@ -180,7 +215,7 @@ func GetSMS() *sms.SMS {
 
 func GetLocalAddress() string {
 	smsAddress := viper.GetString(flagSMSAddress)
-	log.Printf("Dial SMS (%s)", smsAddress)
+	log.Printf("Dial SMS (%s)", Hide(smsAddress))
 	localIP, err := GetOutboundIP(smsAddress + ":443")
 	if err != nil {
 		log.Fatal(err)
@@ -218,7 +253,7 @@ func RunBackup(smsClient *sms.SMS, username, password, localIP, backupPath strin
 	password = url.QueryEscape(password)
 	options := sms.NewBackupDatabaseOptionsSFTP(location, username, password)
 	options.SetSSLPrivateKeys(true).SetTimestamp(false)
-	log.Printf("Initiate backup: %v -> %s", smsClient, localIP)
+	log.Printf("Initiate backup: %v -> %s", smsClient, Hide(localIP))
 	err := smsClient.BackupDatabase(options)
 	if err != nil {
 		log.Fatalf("Backup database: %v", err)
@@ -303,7 +338,7 @@ func GetDaysAlertRequiredFunc() AlertRequiredFunc {
 		aboutToExpire := cert.NotAfter.Before(threshold)
 		expired := cert.NotAfter.Before(now)
 		log.Printf("To expire within %d days: %v; expired: %v; SerialNumber: %v; Issuer: %s; Subject: %s; Expire date: %v",
-			thresholdDays, aboutToExpire, expired, cert.SerialNumber, cert.Issuer, cert.Subject, cert.NotAfter)
+			thresholdDays, aboutToExpire, expired, Hide(cert.SerialNumber), cert.Issuer, Hide(cert.Subject), cert.NotAfter)
 		if expired && ignoreExpired {
 			return false
 		}
@@ -329,8 +364,8 @@ func GetOnDayAlertRequiredFunc() AlertRequiredFunc {
 			beforeFrom := cert.NotAfter.Before(interval.from)
 			afterTo := cert.NotAfter.After(interval.to)
 			alert := !beforeFrom && !afterTo
-			log.Printf("Today: %v; Expire before %v: %v; Expire after %v: %v; Send alert: %v; SerialNumber: %v; Issuer: %s; Subject: %s; Expire date: %v (Not before: %v)",
-				today, interval.from, beforeFrom, interval.to, afterTo, alert, cert.SerialNumber, cert.Issuer, cert.Subject,
+			log.Printf("Today: %v; Expire before: %v (%v); Expire after: %v (%v); Send alert: %v; SerialNumber: %v; Issuer: %s; Subject: %s; Expire date: %v (Not before: %v)",
+				today, beforeFrom, interval.from, afterTo, interval.to, alert, Hide(cert.SerialNumber), cert.Issuer, Hide(cert.Subject),
 				cert.NotAfter, cert.NotBefore)
 			if alert {
 				return alert
@@ -452,6 +487,7 @@ func LogSize(backupPath string) {
 
 func main() {
 	Configure()
+	ConfigureLogging()
 	if len(os.Args) == 2 {
 		_, err := os.Stat(os.Args[1])
 		if err == nil {
