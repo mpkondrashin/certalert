@@ -1,7 +1,6 @@
 package main
 
 import (
-	"crypto/sha1"
 	"crypto/x509"
 	"fmt"
 	"io"
@@ -165,6 +164,10 @@ func Configure() {
 }
 
 func ConfigureLogging() {
+	anon := viper.GetBool(flagLogAnonymize)
+	if anon {
+		log.SetOutput(NewAnonymizer(os.Stderr))
+	}
 	logFileName := viper.GetString(flagLogFileName)
 	if logFileName == "" {
 		return
@@ -174,14 +177,10 @@ func ConfigureLogging() {
 		log.Fatal(err)
 	}
 	mw := io.MultiWriter(os.Stderr, logFile)
+	if anon {
+		mw = NewAnonymizer(mw)
+	}
 	log.SetOutput(mw)
-}
-
-func hide(v any) string {
-	s := fmt.Sprintf("%v", v)
-	hasher := sha1.New()
-	hasher.Write([]byte(s))
-	return fmt.Sprintf("%x", hasher.Sum(nil))
 }
 
 func Hide(v any) string {

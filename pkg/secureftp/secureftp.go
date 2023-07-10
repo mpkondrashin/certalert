@@ -10,10 +10,13 @@ import (
 	"github.com/pkg/sftp"
 )
 
+/*
 var (
-	logger = log.New(os.Stdout, "", log.LstdFlags)
-)
 
+	logger = log.New(os.Stdout, "", log.LstdFlags)
+
+)
+*/
 func getPasswordHandler(password string) func(ssh.Context, string) bool {
 	return (func(ctx ssh.Context, user_password string) bool {
 		return user_password == password
@@ -26,7 +29,7 @@ func Run(user, password string, ip string, port int) {
 		PasswordHandler: ssh.PasswordHandler(getPasswordHandler(password)),
 		SubsystemHandlers: map[string]ssh.SubsystemHandler{
 			"sftp": func(sess ssh.Session) {
-				logger.Printf("sFTP: Attempt")
+				log.Printf("sFTP: Attempt")
 				debugStream := os.Stdout
 				serverOptions := []sftp.ServerOption{
 					sftp.WithDebug(debugStream),
@@ -36,21 +39,21 @@ func Run(user, password string, ip string, port int) {
 					serverOptions...,
 				)
 				if err != nil {
-					logger.Printf("sFTP: Server init error: %s", err)
+					log.Printf("sFTP: Server init error: %s", err)
 					return
 				}
 				if err := server.Serve(); err == io.EOF {
 					server.Close()
-					logger.Printf("sFTP: Client exited session.")
+					log.Printf("sFTP: Client exited session.")
 				} else if err != nil {
-					logger.Printf("sFTP: Server completed with error: %s", err)
+					log.Printf("sFTP: Server completed with error: %s", err)
 				}
 			},
 		},
 	}
-	logger.Printf("sFTP: Listening on %d", port)
+	log.Printf("sFTP: Listening on %d", port)
 	err := server.ListenAndServe()
 	if err != nil {
-		logger.Printf("sFTP: Failed to start the SSH server: %s", err)
+		log.Printf("sFTP: Failed to start the SSH server: %s", err)
 	}
 }
