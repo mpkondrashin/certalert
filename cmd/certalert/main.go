@@ -221,7 +221,7 @@ func GetLocalAddress() string {
 		log.Fatal(err)
 	}
 	log.Printf("SMS connection succeeded")
-	log.Printf("Local address %v", localIP)
+	log.Printf("Local address %v", Hide(localIP))
 	return localIP.String()
 }
 
@@ -253,7 +253,7 @@ func RunBackup(smsClient *sms.SMS, username, password, localIP, backupPath strin
 	password = url.QueryEscape(password)
 	options := sms.NewBackupDatabaseOptionsSFTP(location, username, password)
 	options.SetSSLPrivateKeys(true).SetTimestamp(false)
-	log.Printf("Initiate backup: %v -> %s", smsClient, Hide(localIP))
+	log.Printf("Initiate backup: %v -> %s", Hide(smsClient), Hide(localIP))
 	err := smsClient.BackupDatabase(options)
 	if err != nil {
 		log.Fatalf("Backup database: %v", err)
