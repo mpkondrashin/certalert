@@ -79,6 +79,9 @@ syslog:
   port: 514 # this is the default value
   severity: 4 # Warning
   facility: 0 # LOCAL0
+log:
+  filename: # log file name.
+  anonymize: false # default - false. Removes from log any data that can be considered as confidential.
 ```
 
 To set these parameters through commandline, for example to ignore TLS errors:
