@@ -252,7 +252,7 @@ func RunBackup(smsClient *sms.SMS, username, password, localIP, backupPath strin
 	password = url.QueryEscape(password)
 	options := sms.NewBackupDatabaseOptionsSFTP(location, username, password)
 	options.SetSSLPrivateKeys(true).SetTimestamp(false)
-	log.Printf("Initiate backup: %v -> %s", Hide(smsClient), Hide(localIP))
+	log.Printf("Initiate backup: %v -> %s", smsClient, Hide(localIP))
 	err := smsClient.BackupDatabase(options)
 	if err != nil {
 		log.Fatalf("Backup database: %v", err)
@@ -261,7 +261,12 @@ func RunBackup(smsClient *sms.SMS, username, password, localIP, backupPath strin
 
 func IterateExpiredCertificate(backupName string, alertRequired AlertRequiredFunc, callback func(cert *x509.Certificate) error) error {
 	log.Print("Process backup")
+	duplicates := NewCertDuplicates()
 	return certs.Iterate(backupName, func(cert *x509.Certificate) error {
+		log.Print(certKey(cert))
+		if duplicates.Seen(cert) {
+			return nil
+		}
 		if alertRequired(cert) {
 			return callback(cert)
 		}
@@ -490,6 +495,7 @@ func main() {
 	if len(os.Args) == 2 {
 		_, err := os.Stat(os.Args[1])
 		if err == nil {
+			log.Printf("Process file %s", os.Args[1])
 			ProcessBackup(os.Args[1])
 			return
 		}
