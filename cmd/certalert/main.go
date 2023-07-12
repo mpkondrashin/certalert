@@ -214,13 +214,13 @@ func GetSMS() *sms.SMS {
 
 func GetLocalAddress() string {
 	smsAddress := viper.GetString(flagSMSAddress)
-	log.Printf("Dial SMS (%s)", Hide(smsAddress))
+	log.Printf("Dial SMS (%s)", smsAddress)
 	localIP, err := GetOutboundIP(smsAddress + ":443")
 	if err != nil {
 		log.Fatal(err)
 	}
 	log.Printf("SMS connection succeeded")
-	log.Printf("Local address %v", Hide(localIP))
+	log.Printf("Local address %v", localIP)
 	return localIP.String()
 }
 
@@ -252,7 +252,7 @@ func RunBackup(smsClient *sms.SMS, username, password, localIP, backupPath strin
 	password = url.QueryEscape(password)
 	options := sms.NewBackupDatabaseOptionsSFTP(location, username, password)
 	options.SetSSLPrivateKeys(true).SetTimestamp(false)
-	log.Printf("Initiate backup: %v -> %s", smsClient, Hide(localIP))
+	log.Printf("Initiate backup: %v -> %s", smsClient, localIP)
 	err := smsClient.BackupDatabase(options)
 	if err != nil {
 		log.Fatalf("Backup database: %v", err)

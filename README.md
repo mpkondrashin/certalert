@@ -94,6 +94,15 @@ To set these parameters through environment variable, example for API Key:
 CERTALERT_SMS.API_KEY=A95BE8AB-AE11-45C5-B813-A9A2FDC27E5B certalert
 ```
 
+## Logging
+
+CertAlert can write log to the file if filename is configured in configuration file or command line option "--log.filename".
+Please note that log file is not rotated or limited by size anyhow.
+
+### Anonymization
+
+CertAlert can anonymize its log, i.e. automatically masking IP addresses and domain names. Same IP addresses or domain names will be obfuscated to the same values, but restoring original values is not possible.
+
 ## BUGS
 
 ### On Windows - %TEMP% and certalert.exe on same drive!
@@ -101,3 +110,7 @@ On Windows, system TEMP folder should be on same drive and certalert.exe program
 
 ### Bidirectional connectivity
 Must be available bidirectional connectivity from host running CertAlert to SMS and back!
+
+### IPv6
+
+If using IPv6 address for SMS, please put it in square brackets
