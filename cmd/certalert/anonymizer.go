@@ -35,7 +35,7 @@ var (
 	DomainNameRegEx   = regexp.MustCompile(domainNamePattern)
 )
 
-func hide(v any) string {
+func Hide(v any) string {
 	s := fmt.Sprintf("%v", v)
 	h := hashAndTo64(s)
 	if IPv4RegEx.Match([]byte(s)) {
@@ -76,13 +76,13 @@ func to64(data []byte) string {
 
 func mask(input string) (result string) {
 	result = DomainNameRegEx.ReplaceAllStringFunc(input, func(s string) string {
-		return hide(s)
+		return Hide(s)
 	})
 	result = IPv4RegEx.ReplaceAllStringFunc(result, func(s string) string {
-		return hide(s)
+		return Hide(s)
 	})
 	result = IPv6RegEx.ReplaceAllStringFunc(result, func(s string) string {
-		return hide(s)
+		return Hide(s)
 	})
 	return
 }

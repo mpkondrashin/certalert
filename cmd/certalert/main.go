@@ -183,11 +183,11 @@ func ConfigureLogging() {
 	log.SetOutput(mw)
 }
 
-func Hide(v any) string {
+func HideValue(v any) string {
 	if !viper.GetBool(flagLogAnonymize) {
 		return fmt.Sprintf("%v", v)
 	}
-	return hide(v)
+	return Hide(v)
 }
 
 func OnDay() (result []uint64, err error) {
@@ -342,7 +342,7 @@ func GetDaysAlertRequiredFunc() AlertRequiredFunc {
 		aboutToExpire := cert.NotAfter.Before(threshold)
 		expired := cert.NotAfter.Before(now)
 		log.Printf("To expire within %d days: %v; expired: %v; SerialNumber: %v; Issuer: %s; Subject: %s; Expire date: %v",
-			thresholdDays, aboutToExpire, expired, Hide(cert.SerialNumber), cert.Issuer, Hide(cert.Subject), cert.NotAfter)
+			thresholdDays, aboutToExpire, expired, HideValue(cert.SerialNumber), cert.Issuer, HideValue(cert.Subject), cert.NotAfter)
 		if expired && ignoreExpired {
 			return false
 		}
@@ -369,7 +369,7 @@ func GetOnDayAlertRequiredFunc() AlertRequiredFunc {
 			afterTo := cert.NotAfter.After(interval.to)
 			alert := !beforeFrom && !afterTo
 			log.Printf("Today: %v; Expire before: %v (%v); Expire after: %v (%v); Send alert: %v; SerialNumber: %v; Issuer: %s; Subject: %s; Expire date: %v (Not before: %v)",
-				today, beforeFrom, interval.from, afterTo, interval.to, alert, Hide(cert.SerialNumber), cert.Issuer, Hide(cert.Subject),
+				today, beforeFrom, interval.from, afterTo, interval.to, alert, HideValue(cert.SerialNumber), cert.Issuer, HideValue(cert.Subject),
 				cert.NotAfter, cert.NotBefore)
 			if alert {
 				return alert
@@ -511,7 +511,7 @@ func main() {
 	tempDir := GetTempDir()
 	backupPath := filepath.Join(tempDir, backupName)
 	defer func(backupName string) {
-		log.Print("Remove temporary folder")
+		log.Printf("Remove temporary folder %s", tempDir)
 		_ = os.RemoveAll(tempDir)
 	}(backupName)
 	RunBackup(smsClient, username, password, localIP, backupPath)
