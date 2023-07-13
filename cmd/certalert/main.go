@@ -412,6 +412,7 @@ func ProcessBackup(backupName string) {
 	if err != nil {
 		log.Fatal(err)
 	}
+	log.Println("Done")
 }
 
 func SendMail(cert *x509.Certificate) error {
