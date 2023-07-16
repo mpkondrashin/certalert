@@ -17,6 +17,7 @@ require (
 	github.com/kr/fs v0.1.0 // indirect
 	github.com/magiconair/properties v1.8.7 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
+	github.com/mpkondrashin/anon v0.0.0-20230716151927-eb97f4b1207a // indirect
 	github.com/pelletier/go-toml/v2 v2.0.6 // indirect
 	github.com/pkg/sftp v1.13.5 // indirect
 	github.com/spf13/afero v1.9.3 // indirect

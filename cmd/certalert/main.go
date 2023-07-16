@@ -23,6 +23,7 @@ import (
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 
+	"github.com/mpkondrashin/anon"
 	"github.com/mpkondrashin/certalert/pkg/certs"
 	"github.com/mpkondrashin/certalert/pkg/secureftp"
 	"github.com/mpkondrashin/certalert/pkg/sms"
@@ -164,9 +165,9 @@ func Configure() {
 }
 
 func ConfigureLogging() {
-	anon := viper.GetBool(flagLogAnonymize)
-	if anon {
-		log.SetOutput(NewAnonymizer(os.Stderr))
+	anonymize := viper.GetBool(flagLogAnonymize)
+	if anonymize {
+		log.SetOutput(anon.New(os.Stderr))
 	}
 	logFileName := viper.GetString(flagLogFileName)
 	if logFileName == "" {
@@ -177,8 +178,8 @@ func ConfigureLogging() {
 		log.Fatal(err)
 	}
 	mw := io.MultiWriter(os.Stderr, logFile)
-	if anon {
-		mw = NewAnonymizer(mw)
+	if anonymize {
+		mw = anon.New(mw)
 	}
 	log.SetOutput(mw)
 }
@@ -187,7 +188,7 @@ func HideValue(v any) string {
 	if !viper.GetBool(flagLogAnonymize) {
 		return fmt.Sprintf("%v", v)
 	}
-	return Hide(v)
+	return anon.Hide(v)
 }
 
 func OnDay() (result []uint64, err error) {
