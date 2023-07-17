@@ -144,6 +144,8 @@ github.com/mitchellh/mapstructure v1.5.0 h1:jeMsZIYE/09sWLaz43PL7Gy6RuMjD2eJVyua
 github.com/mitchellh/mapstructure v1.5.0/go.mod h1:bFUtVrKA4DC2yAKiSyO/QUcy7e+RRV2QTWOzhPopBRo=
 github.com/mpkondrashin/anon v0.0.0-20230716151927-eb97f4b1207a h1:uYftplBEqywQXyC54zpHBq2WGEOXxE5xqTmD5EuoLCc=
 github.com/mpkondrashin/anon v0.0.0-20230716151927-eb97f4b1207a/go.mod h1:h0SY/yqWkViHif/ZuR/Ko4CxUxpNygoeLP9Am3eUBbs=
+github.com/mpkondrashin/anon v0.0.1 h1:re+4VRmlM4MN2pILi92Jd96BW7DlCKdPoUr3yNejOKs=
+github.com/mpkondrashin/anon v0.0.1/go.mod h1:h0SY/yqWkViHif/ZuR/Ko4CxUxpNygoeLP9Am3eUBbs=
 github.com/pelletier/go-toml/v2 v2.0.6 h1:nrzqCb7j9cDFj2coyLNLaZuJTLjWjlaz6nvTvIwycIU=
 github.com/pelletier/go-toml/v2 v2.0.6/go.mod h1:eumQOmlWiOPt5WriQQqoM5y18pDHwha2N+QD+EUNTek=
 github.com/pkg/errors v0.9.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=

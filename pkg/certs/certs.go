@@ -102,6 +102,7 @@ func Iterate(smsBackupFileName string, callback func(*x509.Certificate) error) e
 	if err != nil {
 		log.Fatal(err)
 	}
+	//defer zipFile.Close()
 	SMSConfigTAR, err := GetFileFromZip(zipFile, info.Size(), "sms-config.tar")
 	if err != nil {
 		log.Fatal(fmt.Errorf("%s: %w", smsBackupFileName, err))

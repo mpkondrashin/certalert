@@ -514,7 +514,10 @@ func main() {
 	backupPath := filepath.Join(tempDir, backupName)
 	defer func(backupName string) {
 		log.Printf("Remove temporary folder %s", tempDir)
-		_ = os.RemoveAll(tempDir)
+		err := os.RemoveAll(tempDir)
+		if err != nil {
+			log.Print(err)
+		}
 	}(backupName)
 	RunBackup(smsClient, username, password, localIP, backupPath)
 	LogSize(backupPath)
