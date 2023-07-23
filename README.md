@@ -11,7 +11,7 @@
 ### Create API Key
 1. Open Tipping Point SMS
 2. Go to Admin -> Authentication and Authorization -> Users
-3. Create New user and add it into superuser group
+3. Create new user and add it to the superuser group
 4. Save API Key
 
 ### Write config file
@@ -29,7 +29,7 @@ smtp:
 syslog:
   host: 4.5.6.7
 ```
-If email or syslog alert is not needed, just delete appropriate section.
+If email or syslog alert is not needed, just omit appropriate section totally.
 
 ### Run CertAlert
 
@@ -44,9 +44,9 @@ for Linux:
 ./certalert
 ```
 
-For production use, certalert should be launched regularly using operating system scheduled run possibility (Windows Task Scheduler/crontab). In this case two options are available:
+For production use, certalert should run regularly using operating system scheduled run possibility (Windows Task Scheduler/crontab). In this case two options are available:
 1. Run certalert once a week (days: 7) or once in two weeks (days: 14) and alert on all certificates about to expire within this peroid of time. For this "days" options should be used.
-1. Run certalert daily and alert of certificates to expire on particular day or days in the future. Options on_days designed for this.
+1. Run certalert daily and alert of certificates to expire on particular day or days in the future. Option on_days should be used in this case.
 
 ## Options
 
@@ -67,29 +67,29 @@ sms:
   api_key: # SMS API Key
   ignore_tls_errors: false # Can be set to true if SMS has no correct certificate
 smtp:
-  host: # IP address or dns name
+  host: # IP address or dns name of MTA used to send alerts
   port: 25
   from: # email of alert sender
   to: # email of alert recipient
   password: # SMTP auth password
   subject: # Subject prefix
 syslog:
-  host: # IP address or dns name
+  host: # IP address or dns name of Syslog server
   proto: udp # or tcp. udp - default
   port: 514 # this is the default value
   severity: 4 # Warning
   facility: 0 # LOCAL0
 log:
   filename: # log file name.
-  anonymize: false # default - false. Removes from log any data that can be considered as confidential.
+  anonymize: false # default - false. Removes from log data that can be considered as confidential (IP addresses).
 ```
 
-To set these parameters through commandline, for example to ignore TLS errors:
-```commandline
+To set these parameters through commandline, use following notation: <section>.<parameter>. For example to ignore TLS errors use following command line option:
+```commandline 
 certalert --sms.ignore_tls_errors
 ```
 
-To set these parameters through environment variable, example for API Key:
+To set these parameters through environment variable, add CERTALERT_ prefix. Example for API Key:
 ```commandline
 CERTALERT_SMS.API_KEY=A95BE8AB-AE11-45C5-B813-A9A2FDC27E5B certalert
 ```
@@ -101,16 +101,17 @@ Please note that log file is not rotated or limited by size anyhow.
 
 ### Anonymization
 
-CertAlert can anonymize its log, i.e. automatically masking IP addresses and domain names. Same IP addresses or domain names will be obfuscated to the same values, but restoring original values is not possible.
+To remove frome the log file data, that can be considered as confidential, i.e. IP addresses, anonimyze option from log section should be set to true. It will autimatically obfuscate IP addresses and URLs.
 
-## BUGS
+Note: Within same certalert run, same values (IP addresses) will be obfuscated to the same strings, but restoring original values is not possible.
+
+## Known Issues
 
 ### On Windows - %TEMP% and certalert.exe on same drive!
 On Windows, system TEMP folder should be on same drive and certalert.exe program (actually as current folder). If it is not so, "temp" parameter of configuration can be used, e.g. "temp: D:\TEMP" in config.yaml or TMP environment variable can be set.
 
 ### Bidirectional connectivity
-Must be available bidirectional connectivity from host running CertAlert to SMS and back!
+Bidirectional connectivity must be provided from host running CertAlert to SMS and back.
 
 ### IPv6
-
-If using IPv6 address for SMS, please put it in square brackets
+If using IPv6 address for SMS, please put it in square brackets.
