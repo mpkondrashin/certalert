@@ -89,9 +89,9 @@ To set these parameters through commandline, use following notation: <section>.<
 certalert --sms.ignore_tls_errors
 ```
 
-To set these parameters through environment variable, add CERTALERT_ prefix. Example for API Key:
+To set these parameters through environment variable, add CERTALERT_ prefix and put "_" (underscore) between section and option. Example for API Key:
 ```commandline
-CERTALERT_SMS.API_KEY=A95BE8AB-AE11-45C5-B813-A9A2FDC27E5B certalert
+CERTALERT_SMS_API_KEY=A95BE8AB-AE11-45C5-B813-A9A2FDC27E5B certalert
 ```
 
 ## Logging
