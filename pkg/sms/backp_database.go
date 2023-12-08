@@ -58,6 +58,7 @@ func NewBackupDatabaseOptionsSFTP(location, username, password string) *BackupDa
 		Timestamp: true,
 	}
 }
+
 func NewBackupDatabaseOptionsSMS() *BackupDatabaseOptions {
 	return &BackupDatabaseOptions{
 		Type:      "sms",

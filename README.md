@@ -63,18 +63,18 @@ ignore_expired: # Alert only on about to expire certificates, ignoring already e
 # This option can not be used togather with "days"
 temp: # Temporary folder to use for SMS backup file. If empty, it is assumed to be system temporary folder
 sms:
-  address: # IP address or dns name
+  address: # IP address or DNS name
   api_key: # SMS API Key
-  ignore_tls_errors: false # Can be set to true if SMS has no correct certificate
+  ignore_tls_errors: false # Can be set to true if SMS does not have correct certificate
 smtp:
-  host: # IP address or dns name of MTA used to send alerts
+  host: # IP address or DNS name of MTA used to send alerts
   port: 25
   from: # email of alert sender
   to: # email of alert recipient
   password: # SMTP auth password
   subject: # Subject prefix
 syslog:
-  host: # IP address or dns name of Syslog server
+  host: # IP address or DNS name of Syslog server
   proto: udp # or tcp. udp - default
   port: 514 # this is the default value
   severity: 4 # Warning

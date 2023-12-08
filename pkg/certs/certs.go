@@ -9,7 +9,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"os"
 	"path/filepath"
 )
@@ -96,16 +95,19 @@ func GetFileFromZip(input io.ReaderAt, length int64, fileName string) (io.ReadCl
 func Iterate(smsBackupFileName string, callback func(*x509.Certificate) error) error {
 	info, err := os.Stat(smsBackupFileName)
 	if err != nil {
-		log.Fatal(err)
+		return err
+		//log.Fatal(err)
 	}
 	zipFile, err := os.Open(smsBackupFileName)
 	if err != nil {
-		log.Fatal(err)
+		return err
+		//log.Fatal(err)
 	}
 	defer zipFile.Close()
 	SMSConfigTAR, err := GetFileFromZip(zipFile, info.Size(), "sms-config.tar")
 	if err != nil {
-		log.Fatal(fmt.Errorf("%s: %w", smsBackupFileName, err))
+		return fmt.Errorf("%s: %w", smsBackupFileName, err)
+		//log.Fatal(fmt.Errorf("%s: %w", smsBackupFileName, err))
 	}
 	defer SMSConfigTAR.Close()
 	folderMask := "opt/sms/policy/images/*"

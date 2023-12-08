@@ -4,7 +4,6 @@ import (
 	"crypto/x509"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"math/rand"
 	"net"
@@ -182,6 +181,9 @@ func ConfigureLogging() {
 		mw = anon.New(mw)
 	}
 	log.SetOutput(mw)
+	if anonymize {
+		log.Println("Anonymize mode on")
+	}
 }
 
 func HideValue(v any) string {
@@ -457,9 +459,9 @@ func GetOutboundIP(address string) (net.IP, error) {
 	return localAddr.IP, nil
 }
 
-func init() {
-	rand.Seed(time.Now().UnixNano())
-}
+//func init() {
+//	rand.Seed(time.Now().UnixNano())
+//}
 
 func RandStringBytesRmndr(n int) string {
 	const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
@@ -474,7 +476,7 @@ func GetTempDir() string {
 	tempDir := viper.GetString(flagTempDir)
 	if tempDir == "" {
 		var err error
-		tempDir, err = ioutil.TempDir(viper.GetString(flagTempDir), "ca-*")
+		tempDir, err = os.MkdirTemp(viper.GetString(flagTempDir), "ca-*")
 		if err != nil {
 			log.Fatalf("TempDir: %v", err)
 		}
